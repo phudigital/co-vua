@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cờ Vua Cho Bé</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="style.css?v=1.9">
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- 1. Header -->
+        <div class="top-bar">
+            <h1 class="game-title">🏰 Vua Cờ Nhí 🏰</h1>
+            <div id="status" class="status-box">Chọn màu để chơi</div>
+        </div>
+
+        <!-- 2. Bàn cờ -->
+        <div class="board-area">
+            <div id="myBoard"></div>
+        </div>
+
+        <!-- 3. MỚI: HỘP HƯỚNG DẪN -->
+        <div id="move-hint" class="hint-box">
+            Chạm vào quân cờ để xem cách đi nhé!
+        </div>
+
+        <!-- 4. Nút bấm -->
+        <div class="bottom-controls">
+            <div class="row g-2">
+                <div class="col-6">
+                    <button id="btnUndo" class="btn-kid btn-undo">↩️ Đi lại</button>
+                </div>
+                <div class="col-6">
+                    <button id="btnNewGame" class="btn-kid btn-new">✨ Ván mới</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chọn Màu -->
+    <div class="modal fade" id="colorModal" data-bs-backdrop="static" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 justify-content-center">
+                    <h4 class="fw-bold text-primary">Bé chọn đội nào?</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row text-center">
+                        <div class="col-6" onclick="chooseColor('white')">
+                            <div class="color-choice">
+                                <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wK.png" class="color-img">
+                                <h5 class="mt-2 text-dark">Đội Trắng</h5>
+                            </div>
+                        </div>
+                        <div class="col-6" onclick="chooseColor('black')">
+                            <div class="color-choice">
+                                <img src="https://chessboardjs.com/img/chesspieces/wikipedia/bK.png" class="color-img">
+                                <h5 class="mt-2 text-dark">Đội Đen</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script src="sound.js?v=1.9"></script>
+    <script src="ai.js?v=1.9"></script>
+    <script src="script.js?v=2"></script>
+</body>
+</html>

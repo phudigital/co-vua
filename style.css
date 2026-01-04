@@ -1,0 +1,145 @@
+/* style.css - Phiên bản có Hướng dẫn & Giao diện Mobile chuẩn */
+
+:root {
+    --bg-color: #e0f7fa;
+    --board-border: #8d6e63;
+    --btn-primary: #ff7043;
+    --btn-secondary: #42a5f5;
+    --hint-bg: #fff9c4; /* Màu nền vàng nhạt cho hộp hướng dẫn */
+    --hint-text: #f57f17;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0; padding: 0;
+    width: 100%;
+    height: 100dvh;
+    font-family: 'Comic Sans MS', sans-serif;
+    /* Màu nền tối cho body để làm nổi bật khung game ở giữa (trên PC) */
+    background-color: #37474f; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+}
+
+/* KHUNG GAME GIẢ LẬP ĐIỆN THOẠI */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    
+    /* Logic giới hạn chiều rộng trên Desktop */
+    max-width: 450px; /* Kích thước chuẩn điện thoại */
+    max-height: 900px;
+    background-color: var(--bg-color); /* Màu nền game */
+    
+    /* Đổ bóng để tạo cảm giác nổi trên PC */
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+    
+    padding: 10px;
+    position: relative;
+}
+
+/* HEADER */
+.top-bar {
+    flex: 0 0 auto;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.game-title {
+    font-size: 1.4rem;
+    color: #d84315;
+    margin: 0;
+    font-weight: bold;
+}
+
+.status-box {
+    background: #fff;
+    border: 2px solid #ffcc80;
+    border-radius: 15px;
+    padding: 4px 15px;
+    font-size: 1rem;
+    color: #333;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+/* BÀN CỜ */
+.board-area {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+#myBoard {
+    width: 90vmin; 
+    height: 90vmin;
+    /* Giới hạn kích thước bàn cờ theo container cha */
+    max-width: 100%; 
+    max-height: 100%;
+    border: 5px solid var(--board-border);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* --- MỚI: HỘP HƯỚNG DẪN --- */
+.hint-box {
+    flex: 0 0 auto; /* Không co giãn */
+    background-color: var(--hint-bg);
+    color: var(--hint-text);
+    border: 2px dashed #fbc02d;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin: 5px 0;
+    text-align: center;
+    font-size: 0.95rem;
+    font-weight: bold;
+    min-height: 60px; /* Đủ cao cho 2 dòng text */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* NÚT BẤM */
+.bottom-controls {
+    flex: 0 0 auto;
+    width: 100%;
+    padding-bottom: 5px;
+}
+
+.btn-kid {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+}
+.btn-kid:active { transform: translateY(4px); box-shadow: none; }
+.btn-undo { background-color: var(--btn-secondary); }
+.btn-new { background-color: var(--btn-primary); }
+
+/* EFFECTS */
+.highlight-selected { box-shadow: inset 0 0 5px 4px #ffeb3b !important; }
+.highlight-move { box-shadow: inset 0 0 8px 6px #69f0ae !important; cursor: pointer; }
+.in-check { background-color: #ffcdd2 !important; color: #c62828 !important; border-color: #c62828 !important; animation: blink-red 1s infinite; }
+.shake-board { animation: shake 0.5s; }
+@keyframes blink-red { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+/* Modal */
+.modal-content { border-radius: 20px; border: 4px solid #ffcc80; }
+.color-choice { padding: 10px; border-radius: 10px; transition: 0.2s; }
+.color-choice:active { background-color: #ffe0b2; transform: scale(0.95); }
+.color-img { width: 70px; }
