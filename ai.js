@@ -2,16 +2,21 @@
 
 var ChessAI = (function() {
     return {
-        // Hàm trả về nước đi tốt nhất (Hiện tại là ngẫu nhiên)
-        getBestMove: function(game) {
+        // Hàm này giờ sẽ nhận một "callback" function
+        getBestMove: function(game, callback) {
             var possibleMoves = game.moves();
             
-            // Hết nước đi
-            if (possibleMoves.length === 0) return null;
+            if (possibleMoves.length === 0) {
+                callback(null); // Trả về null qua callback
+                return;
+            }
 
-            // Chọn ngẫu nhiên
             var randomIdx = Math.floor(Math.random() * possibleMoves.length);
-            return possibleMoves[randomIdx];
+            
+            // Trì hoãn một chút để mô phỏng AI "đang suy nghĩ"
+            setTimeout(function() {
+                callback(possibleMoves[randomIdx]); // Trả về nước đi qua callback
+            }, 100); 
         }
     };
 })();

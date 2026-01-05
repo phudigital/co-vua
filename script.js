@@ -1,12 +1,12 @@
-// script.js - Có giọng đọc Google
+// script.js - Có giọng đọc Google - Phiên bản gộp hint-box
 
 var board = null;
 var game = new Chess();
-var $status = $('#status');
 var $board = $('#myBoard');
 var $hint = $('#move-hint');
 var playerColor = 'w'; 
 var squareToHighlight = null; 
+var currentAI = ChessAI; // AI mặc định
 
 // --- TỪ ĐIỂN HƯỚNG DẪN (Nội dung sẽ được Google đọc) ---
 const hints = {
@@ -41,7 +41,7 @@ function onSquareClick(square) {
             board.position(game.fen());
             removeHighlights();
             squareToHighlight = null;
-            $hint.text("Hay quá! Chờ máy đi nhé...");
+            updateHint("Hay quá! Chờ máy đi nhé...");
             handleMoveEffects(move);
             updateStatus();
             window.setTimeout(makeMachineMove, 500);
@@ -74,7 +74,7 @@ function onSquareClick(square) {
         var guideText = hints[pieceAtSquare.type.toLowerCase()];
         if (guideText) {
             // 1. Hiện chữ
-            $hint.text(guideText);
+            updateHint(guideText);
             
             // 2. Gọi Google đọc to câu hướng dẫn
             SoundManager.speakGoogle(guideText);
@@ -83,26 +83,41 @@ function onSquareClick(square) {
 }
 
 function handleMoveEffects(move) {
+    // Kiểm tra nếu là nước đi ăn quân
     if (move.flags.includes('c') || move.flags.includes('e')) {
-        SoundManager.play('capture'); 
-        shootConfetti(); 
+        // move.color là màu của quân cờ vừa di chuyển
+        if (move.color === playerColor) {
+            // Người chơi ăn quân của máy -> Vui
+            SoundManager.play('capture');
+            shootConfetti();
+        } else {
+            // Máy ăn quân của người chơi -> Buồn
+            SoundManager.play('capture_sad'); // Âm thanh buồn
+            $('#myBoard').addClass('shake-sad'); // Hiệu ứng rung buồn
+            setTimeout(function() {
+                $('#myBoard').removeClass('shake-sad');
+            }, 500);
+        }
     } else {
-        SoundManager.play('move'); 
+        // Nước đi bình thường
+        SoundManager.play('move');
     }
 }
 
 function makeMachineMove() {
     if (game.game_over()) return;
 
-    if (typeof ChessAI !== 'undefined') {
-        var moveSan = ChessAI.getBestMove(game);
-        if (moveSan) {
-            var move = game.move(moveSan);
-            board.position(game.fen());
-            handleMoveEffects(move);
-            updateStatus();
-            $hint.text("Đến lượt bé rồi!");
-        }
+    if (typeof currentAI !== 'undefined') {
+        // AI giờ sẽ trả về nước đi qua callback
+        currentAI.getBestMove(game, function(moveSan) {
+            if (moveSan) {
+                var move = game.move(moveSan, { sloppy: true }); // sloppy: true để chấp nhận định dạng từ stockfish
+                board.position(game.fen());
+                handleMoveEffects(move);
+                updateStatus();
+                updateHint("Đến lượt bé rồi!");
+            }
+        });
     }
 }
 
@@ -110,33 +125,41 @@ function shootConfetti() {
     confetti({ particleCount: 30, spread: 60, origin: { y: 0.6 } });
 }
 
+function updateHint(message) {
+    $hint.text(message);
+    $hint.addClass('new-message');
+    setTimeout(function() {
+        $hint.removeClass('new-message');
+    }, 500);
+}
+
 function updateStatus() {
-    var status = '';
     var moveColor = (game.turn() === 'b') ? 'Đen' : 'Trắng';
 
-    $status.removeClass('in-check');
+    $hint.removeClass('in-check');
     $('#myBoard').removeClass('shake-board');
 
     if (game.in_checkmate()) {
-        status = '🏆 ' + (moveColor === 'Trắng' ? 'Đen' : 'Trắng') + ' thắng!';
-        $hint.text("Ván cờ kết thúc!");
+        updateHint('🏆 ' + (moveColor === 'Trắng' ? 'Đen' : 'Trắng') + ' thắng!');
         SoundManager.speakGoogle("Hết cờ rồi. " + (moveColor === 'Trắng' ? 'Đen' : 'Trắng') + " đã chiến thắng.");
         shootConfetti();
     } else if (game.in_draw()) {
-        status = '🤝 Hòa!';
+        updateHint('🤝 Hòa!');
     } else {
-        if (game.turn() === playerColor) status = "Lượt của Bé";
-        else status = "Máy đang nghĩ...";
+        if (game.turn() === playerColor) {
+            updateHint("Lượt của Bé");
+        } else {
+            updateHint("Máy đang nghĩ...");
+        }
         
         if (game.in_check()) {
-            status = '⚠️ CHIẾU TƯỚNG! ⚠️';
-            $status.addClass('in-check');
+            updateHint('⚠️ VUA NGUY HIỂM ! ⚠️');
+            $hint.addClass('in-check');
             $('#myBoard').addClass('shake-board');
             SoundManager.play('check');
             SoundManager.speakGoogle("Cẩn thận nha, Vua đang bị chiếu!");
         }
     }
-    $status.text(status);
 }
 
 // SETUP
@@ -145,6 +168,26 @@ var colorModal = new bootstrap.Modal(document.getElementById('colorModal'), { ke
 window.chooseColor = function(color) {
     SoundManager.init(); // Quan trọng cho iOS
     playerColor = (color === 'white') ? 'w' : 'b';
+
+    // Đọc AI level từ dropdown
+    var aiLevel = $('#aiLevel').val();
+    var aiModeText = ''; // Chuỗi để hiển thị
+    if (aiLevel === '1') {
+        currentAI = ChessAI_lv1;
+        aiModeText = '💪 Đang chơi với: Nghiêm túc';
+    } else if (aiLevel === '2') {
+        currentAI = ChessAI_lv2;
+        aiModeText = '🤔 Đang chơi với: Thách đấu';
+    } else if (aiLevel === 'max') {
+        currentAI = ChessAI_max;
+        aiModeText = '👾 Đang chơi với: Trùm cuối';
+    } else {
+        currentAI = ChessAI;
+        aiModeText = '🍼 Đang chơi với: Tập chơi';
+    }
+    $('#ai-mode-display').text(aiModeText); // Cập nhật text
+
+
     colorModal.hide();
     game.reset();
     
@@ -166,12 +209,11 @@ window.chooseColor = function(color) {
     SoundManager.play('start');
     
     if (playerColor === 'b') {
-        $status.text("Máy đang nghĩ...");
-        $hint.text("Máy đi trước nhé...");
+        updateHint("Máy đi trước nhé...");
         window.setTimeout(makeMachineMove, 1000);
     } else {
         updateStatus();
-        $hint.text("Chạm vào quân cờ để nghe hướng dẫn nhé!");
+        updateHint("Chạm vào quân cờ để nghe hướng dẫn nhé!");
         // Đọc lời chào mừng
         SoundManager.speakGoogle("Bắt đầu thôi. Chạm vào quân cờ để nghe hướng dẫn nhé.");
     }
@@ -183,7 +225,7 @@ $('#btnUndo').on('click', function() {
     board.position(game.fen());
     removeHighlights();
     squareToHighlight = null;
-    $hint.text("Đã đi lại.");
+    updateHint("Đã đi lại.");
     updateStatus();
 });
 

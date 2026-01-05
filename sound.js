@@ -7,8 +7,9 @@ const SoundManager = (function() {
 
     // Link file âm thanh hiệu ứng (SFX)
     const sounds = {
-        move: 'https://images.chesscomfiles.com/chess-themes/sounds/_common/move-self.mp3',
-        capture: 'https://images.chesscomfiles.com/chess-themes/sounds/_common/capture.mp3',
+        move: 'https://actions.google.com/sounds/v1/cartoon/pop.ogg',
+        capture: 'https://actions.google.com/sounds/v1/impacts/big_punch.ogg',
+        capture_sad: 'https://actions.google.com/sounds/v1/cartoon/descending_saw.ogg', // Âm thanh khi quân của bé bị ăn
         start: 'https://images.chesscomfiles.com/chess-themes/sounds/_common/game-start.mp3',
         check: 'https://images.chesscomfiles.com/chess-themes/sounds/_common/illegal.mp3'
     };
@@ -46,6 +47,7 @@ const SoundManager = (function() {
 
             loadSound('move', sounds.move);
             loadSound('capture', sounds.capture);
+            loadSound('capture_sad', sounds.capture_sad); // Tải âm thanh mới
             loadSound('start', sounds.start);
             loadSound('check', sounds.check);
 
