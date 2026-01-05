@@ -1,6 +1,6 @@
 /**
  * Main Game Controller v2.3.0
- * Tối ưu âm thanh cho Mobile (Xử lý Autoplay Policy)
+ * Logic hiển thị kết quả chậm lại để bé xem nước cờ
  */
 class GameController {
     constructor() {
@@ -11,7 +11,7 @@ class GameController {
         this.isGameActive = false;
         this.gameOverMessage = '';
         this.overlayTimer = null;
-        this.userHasInteracted = false; // Flag kiểm tra người dùng đã tương tác chưa
+        this.userHasInteracted = false;
 
         this.levelNames = {
             1: "🐣 Cấp 1: Tập chơi (Rất Dễ)",
@@ -31,25 +31,21 @@ class GameController {
         };
         Object.values(this.sounds).forEach(s => s.load());
 
-        // Bắt sự kiện chạm/click đầu tiên trên toàn bộ trang để đánh dấu đã tương tác
         document.addEventListener('touchstart', this.handleInteraction, { once: true });
         document.addEventListener('mousedown', this.handleInteraction, { once: true });
 
+        // Khi game over, bấm vào bàn cờ sẽ hiện lại thông báo ngay lập tức
         $('#board-container').on('click', () => {
             if (this.game.game_over()) {
+                // Hủy timer đang chờ (nếu có) để hiện luôn
+                clearTimeout(this.overlayTimer);
                 this.showGameResultOverlay(this.gameOverMessage, false);
             }
         });
     }
 
-    // Hàm xử lý tương tác đầu tiên
     handleInteraction = () => {
         this.userHasInteracted = true;
-        console.log("User interacted, audio should now play.");
-        // Thử phát lại âm thanh khởi động nếu nó chưa chạy lần đầu
-        if (!this.isGameActive && this.sounds.start) {
-            this.playSound('start');
-        }
     }
 
     loadSound(fileName) {
@@ -74,13 +70,14 @@ class GameController {
         this.gameOverMessage = '';
 
         $('#game-overlay').hide();
+        clearTimeout(this.overlayTimer);
         
         const levelText = this.levelNames[level] || "Cấp độ tùy chỉnh";
         $('#current-level-badge').html(`<span class="animate-pulse">✨</span> Đang đấu với: ${levelText}`);
 
         this.updateBoardUI();
         this.updateStatus();
-        this.playSound('start'); // Âm thanh này có thể không chạy nếu chưa tương tác
+        this.playSound('start');
 
         if (this.playerColor === 'b') {
             this.triggerAiMove();
@@ -90,7 +87,7 @@ class GameController {
     undoMove() {
         if (this.game.history().length === 0) return;
         $('#game-overlay').hide();
-        clearTimeout(this.overlayTimer);
+        clearTimeout(this.overlayTimer); // Hủy lệnh hiện thông báo nếu bé bấm lùi nhanh
         
         if (this.game.game_over()) {
             this.game.undo();
@@ -101,7 +98,7 @@ class GameController {
         }
         this.updateBoardUI();
         this.updateStatus();
-        this.playSound('move'); // Âm thanh này sẽ chạy nếu user đã tương tác
+        this.playSound('move');
         this.removeDangerEffect();
     }
 
@@ -115,31 +112,16 @@ class GameController {
         document.getElementById('setup-modal').style.display = 'none';
     }
 
-    // NÂNG CẤP PLAY SOUND
     playSound(type) {
-        // Dừng các âm thanh dài trước
         if (['start', 'victory', 'defeat'].includes(type)) {
              this.sounds['victory'].pause(); this.sounds['victory'].currentTime = 0;
              this.sounds['defeat'].pause(); this.sounds['defeat'].currentTime = 0;
              this.sounds['start'].pause(); this.sounds['start'].currentTime = 0;
         }
-        
         if (this.sounds[type]) {
-            // Chỉ cho phép phát âm thanh nếu người dùng đã tương tác HOẶC game đang active (đã có tương tác ngầm)
-            // Hoặc là âm thanh check/move/capture - chúng ta thử phát luôn, nếu lỗi thì thôi
             if (this.userHasInteracted || ['check', 'move', 'capture'].includes(type)) {
                 this.sounds[type].currentTime = 0;
-                const playPromise = this.sounds[type].play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        // Nếu bị lỗi do chưa tương tác, chúng ta không làm gì cả
-                        // console.log(`Audio error for ${type}: ${error.message}`);
-                    });
-                }
-            } else {
-                // Nếu là âm thanh 'start' và user chưa tương tác, có thể nó sẽ không chạy
-                // Chúng ta sẽ thử lại khi user tương tác lần đầu
-                console.log(`Audio ${type} blocked, waiting for user interaction.`);
+                this.sounds[type].play().catch(() => {});
             }
         }
     }
@@ -147,7 +129,7 @@ class GameController {
     triggerCheckWarning() {
         const boardContainer = document.getElementById('board-container');
         boardContainer.classList.add('danger-zone');
-        this.playSound('check'); // Âm thanh này sẽ được thử phát
+        this.playSound('check');
         const turn = this.game.turn();
         const board = this.game.board();
         let kingSquare = null;
@@ -180,21 +162,14 @@ class GameController {
         const overlay = $('#game-overlay');
         const textEl = overlay.find('.overlay-text');
         
-        if (message.includes('THẮNG')) textEl.css('color', '#22c55e');
-        else if (message.includes('THUA')) textEl.css('color', '#ef4444');
-        else textEl.css('color', '#eab308');
+        if (message.includes('THẮNG')) textEl.css('color', '#22c55e'); // Xanh lá
+        else if (message.includes('THUA')) textEl.css('color', '#ef4444'); // Đỏ đậm
+        else textEl.css('color', '#eab308'); // Vàng
 
         textEl.html(message);
         overlay.css('display', 'flex').hide().fadeIn(300);
 
-        if (playSound) {
-            // Âm thanh thắng/thua/start sẽ chỉ phát nếu user đã tương tác
-            if (this.userHasInteracted) {
-                if (message.includes('THẮNG')) this.playSound('victory');
-                else if (message.includes('THUA')) this.playSound('defeat');
-            }
-        }
-
+        // Tự tắt sau 3 giây
         clearTimeout(this.overlayTimer);
         this.overlayTimer = setTimeout(() => {
             overlay.fadeOut(500);
@@ -218,7 +193,10 @@ class GameController {
                 dests: this.getValidMoves(),
                 events: { after: (orig, dest) => this.onPlayerMove(orig, dest) }
             },
-            drawable: { enabled: true, visible: true }
+            drawable: { enabled: true, visible: true },
+            lastMove: this.game.history({verbose: true}).length > 0 ? 
+                      [this.game.history({verbose: true}).slice(-1)[0].from, 
+                       this.game.history({verbose: true}).slice(-1)[0].to] : null
         };
 
         if (!this.board) {
@@ -242,7 +220,7 @@ class GameController {
         if (!this.isGameActive) return;
         const move = this.game.move({ from: orig, to: dest, promotion: 'q' });
         if (move) {
-            this.playSound('move'); // Âm thanh này sẽ phát nếu user đã tương tác
+            this.playSound('move');
             this.updateStatus();
             this.board.set({ movable: { color: null } });
             if (!this.game.game_over()) {
@@ -284,27 +262,43 @@ class GameController {
                     dests: this.getValidMoves()
                 }
             });
-            this.playSound('capture'); // Âm thanh này sẽ phát nếu user đã tương tác
+            this.playSound('move');
+            
+            // Xóa highlight cũ đi trước khi updateStatus
+            this.removeDangerEffect();
+            
             this.updateStatus();
         }
     }
 
     updateStatus() {
-        this.removeDangerEffect();
+        // Chỉ xóa danger effect nếu KHÔNG phải là Checkmate (vì checkmate cần hiện Vua đỏ)
+        if (!this.game.in_checkmate()) {
+            this.removeDangerEffect();
+        }
 
         if (this.game.game_over()) {
             this.isGameActive = false;
-            this.board.stop();
+            this.board.stop(); // Khóa bàn cờ ngay lập tức
 
+            // Logic xử lý nội dung
+            let playSoundName = '';
+            
             if (this.game.in_checkmate()) {
+                // Hiển thị vị trí Vua bị chết ngay lập tức
+                this.triggerCheckWarning(); 
+
                 if (this.game.turn() !== this.playerColor) {
+                    // Bé thắng
                     this.gameOverMessage = "BÉ GIỎI QUÁ!<br>THẮNG RỒI 🏆";
-                    // Confetti chỉ chạy nếu user đã tương tác
-                    if(this.userHasInteracted) confetti({ particleCount: 250, spread: 120, origin: { y: 0.6 } });
+                    playSoundName = 'victory';
+                    confetti({ particleCount: 250, spread: 120, origin: { y: 0.6 } });
                     $('#game-status').html('<span class="text-green-600">🏆 BÉ THẮNG RỒI!</span>');
                 } else {
-                    this.gameOverMessage = "BÉ THUA RỒI<br>CỐ GẮNG NHÉ 😢";
-                    $('#game-status').html('<span class="text-red-500">😢 Bé thua rồi.</span>');
+                    // Bé thua
+                    this.gameOverMessage = "BÉ THUA RỒI<br>TIẾC QUÁ 😢";
+                    playSoundName = 'defeat';
+                    $('#game-status').html('<span class="text-red-500">😅 Bé thua rồi.</span>');
                 }
             } else if (this.game.in_draw()) {
                 this.gameOverMessage = "HÒA RỒI!<br>BẮT TAY NÀO 🤝";
@@ -312,17 +306,30 @@ class GameController {
             } else {
                 this.gameOverMessage = "HẾT CỜ!";
             }
-            // Overlay sẽ chỉ phát nhạc nếu user đã tương tác
-            this.showGameResultOverlay(this.gameOverMessage, this.userHasInteracted); 
+
+            // --- PHẦN QUAN TRỌNG: TRÌ HOÃN HIỂN THỊ CHỮ ---
+            
+            // 1. Phát âm thanh ngay lập tức để tạo cảm xúc
+            if (playSoundName && this.userHasInteracted) {
+                this.playSound(playSoundName);
+            }
+
+            // 2. Đợi 2 giây (2000ms) để bé nhìn bàn cờ và nước đi cuối
+            // Trong lúc này: Vua vẫn nhấp nháy đỏ (nếu bị chiếu hết), nước đi cuối (lastMove) vẫn sáng
+            clearTimeout(this.overlayTimer);
+            this.overlayTimer = setTimeout(() => {
+                this.showGameResultOverlay(this.gameOverMessage, false); // false = không phát lại nhạc
+            }, 2000);
 
         } else {
+            // Game chưa kết thúc
             if (this.game.in_check()) {
                 if (this.game.turn() === this.playerColor) {
                     $('#game-status').html('<span class="text-red-600 font-black">⚡ CỨU VUA NGAY!</span>');
                     this.triggerCheckWarning(); 
                 } else {
                     $('#game-status').text('🔥 Bé đang chiếu máy!');
-                    this.playSound('check'); // Âm thanh này sẽ phát nếu user đã tương tác
+                    this.playSound('check');
                 }
             } else {
                 if (this.game.turn() === this.playerColor) {
@@ -330,6 +337,37 @@ class GameController {
                 }
             }
         }
+    }
+
+    // ... (Giữ nguyên các hàm khác) ...
+    showGameResultOverlay(message, playSound = true) {
+        const overlay = $('#game-overlay');
+        const textEl = overlay.find('.overlay-text');
+        
+        if (message.includes('THẮNG')) textEl.css('color', '#22c55e');
+        else if (message.includes('THUA')) textEl.css('color', '#ef4444');
+        else textEl.css('color', '#eab308');
+
+        textEl.html(message);
+        overlay.css('display', 'flex').hide().fadeIn(300);
+
+        if (playSound && this.userHasInteracted) {
+             // Logic playSound đã xử lý ở updateStatus, hàm này chỉ để fallback
+             // Hoặc dùng khi click lại vào bàn cờ
+        }
+
+        clearTimeout(this.overlayTimer);
+        this.overlayTimer = setTimeout(() => {
+            overlay.fadeOut(500);
+        }, 3000);
+    }
+    
+    // ... (Giữ nguyên phần còn lại) ...
+    triggerAiMove() {
+        $('#game-status').text('🤔 Máy đang nghĩ...');
+        this.ai.getMove(this.game, (bestMove) => {
+            this.onAiMove(bestMove);
+        });
     }
 
     showHint() {

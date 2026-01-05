@@ -58,7 +58,7 @@ body {
 #game-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.6); /* Nền tối mờ nhẹ hơn để vẫn thấy bàn cờ */
     z-index: 99999;
     display: flex;
     align-items: center;
@@ -69,22 +69,33 @@ body {
 }
 
 .overlay-text {
-    font-size: 3.5rem;
+    font-size: 4rem; /* Chữ to hơn */
     font-weight: 900;
     text-align: center;
-    line-height: 1.2;
-    text-shadow: 4px 4px 0 #fff, 0 0 25px rgba(0,0,0,0.5);
-    padding: 20px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 20px;
-    backdrop-filter: blur(4px);
+    line-height: 1.1;
+    padding: 30px;
+    border-radius: 30px;
+    
+    /* Tạo viền chữ dày màu trắng */
+    -webkit-text-stroke: 3px white;
+    paint-order: stroke fill;
+    
+    /* Đổ bóng để tách biệt hẳn với nền */
+    text-shadow: 
+        4px 4px 0px #fff, 
+        0px 0px 30px rgba(0,0,0,0.5);
+        
+    /* Font dễ thương */
+    font-family: 'Quicksand', sans-serif;
+    transform: rotate(-5deg); /* Nghiêng nhẹ cho vui mắt */
 }
 
 @keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    80% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
+    0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+    70% { transform: scale(1.2) rotate(5deg); }
+    100% { transform: scale(1) rotate(-5deg); opacity: 1; }
 }
+
 
 /* --- UI ELEMENTS --- */
 .btn-control {
