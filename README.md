@@ -1,87 +1,109 @@
-# Cờ Vua Cho Bé
+# Cờ Vua Vui Vẻ
 
-## Mô Tả
+<div align="center">
 
-Ứng dụng web vui nhộn giúp bé học và chơi cờ vua một cách dễ dàng. Với giao diện thân thiện, hướng dẫn bằng giọng đọc, và AI đơn giản, bé có thể chơi cờ vua với máy tính hoặc tự luyện tập.
+![Version](https://img.shields.io/badge/version-2.2.52-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Web%20Browser-lightgrey.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES6-F7DF1E.svg)
+![TailwindCSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC.svg)
+![Stockfish](https://img.shields.io/badge/AI%20Engine-Stockfish-orange.svg)
 
-## Tính Năng Chính
+**Một trang web chơi cờ vua đơn giản, vui vẻ với nhiều cấp độ AI, chạy trực tiếp trên trình duyệt.**
 
-- **Chơi Với Máy**: Chọn màu trắng hoặc đen để chơi với AI.
-- **Hướng Dẫn Bằng Giọng Đọc**: Khi chạm vào quân cờ, ứng dụng sẽ đọc hướng dẫn cách đi của quân đó bằng giọng Google.
-- **Âm Thanh Hiệu Ứng**: Âm thanh vui nhộn khi di chuyển, ăn quân, hoặc bắt đầu ván mới.
-- **Hiệu Ứng Confetti**: Pháo hoa khi ăn quân đối phương.
-- **Giao Diện Thân Thiện**: Thiết kế vui nhộn, phù hợp trẻ em, responsive trên mobile.
-- **Nút Đi Lại**: Có thể undo nước đi cuối cùng.
-- **Ván Mới**: Bắt đầu ván cờ mới bất kỳ lúc nào.
+[Tính Năng](#-tính-năng) • [Cách Chơi](#-cách-chơi) • [Cài Đặt](#-cài-đặt) • [Công Nghệ Sử Dụng](#-công-nghệ-sử-dụng)
 
-## Cách Chơi
+</div>
 
-1. Mở ứng dụng và chọn màu đội (Trắng hoặc Đen).
-2. Chạm vào quân cờ của bạn để xem hướng dẫn và highlight nước đi có thể.
-3. Chạm vào ô đích để di chuyển quân.
-4. Máy sẽ tự động đi sau lượt của bạn.
-5. Sử dụng nút "Đi lại" để undo nếu cần, hoặc "Ván mới" để bắt đầu lại.
+---
 
-## Truy Cập Trực Tiếp
+## 📋 Tổng Quan
 
-Bạn có thể chơi ngay tại: [https://app.pdl.vn/co-vua/](https://app.pdl.vn/co-vua/)
+**Cờ Vua Vui Vẻ** là một dự án game cờ vua gọn nhẹ được xây dựng bằng HTML, JavaScript và Tailwind CSS. Trò chơi cho phép bạn đấu với một AI có 5 cấp độ khó khác nhau, từ người mới tập chơi cho đến mức thử thách cao. Giao diện được thiết kế để thân thiện và dễ sử dụng, không yêu cầu cài đặt phức tạp.
 
-## Cài Đặt & Chạy
+Phù hợp cho:
+- 👥 **Người mới bắt đầu** - Làm quen với luật chơi ở các cấp độ dễ.
+- ♟️ **Người chơi giải trí** - Thư giãn với các ván cờ nhanh.
+- 👨‍💻 **Lập trình viên** - Tham khảo cách tích hợp thư viện `chess.js`, `Chessground` và engine `Stockfish` vào một trang web.
 
-### Yêu Cầu
-- Trình duyệt web hiện đại hỗ trợ JavaScript và Audio API.
-- Kết nối internet để tải thư viện từ CDN.
+## ✨ Tính Năng
 
-### Bước Cài Đặt
-1. Clone hoặc tải xuống dự án:
-   ```bash
-   git clone <repository-url>
-   cd co-vua
-   ```
+- 👑 **Chơi với máy (AI)** - Thử thách bản thân với 5 cấp độ khó.
+- 🐣 **Cấp độ đa dạng**:
+    - **Level 1-2**: AI đơn giản, dựa trên quy tắc và tính ngẫu nhiên, phù hợp để học.
+    - **Level 3-5**: Tích hợp engine **Stockfish** mạnh mẽ với độ khó tăng dần.
+- ⚪⚫ **Chọn màu quân** - Bắt đầu ván cờ với quân Trắng hoặc Đen.
+- ↩️ **Đi lại (Undo)** - Quay lại nước đi trước đó nếu bạn mắc sai lầm.
+- 💡 **Gợi ý nước đi (Hint)** - Nhận gợi ý cho nước đi tiếp theo (sử dụng Stockfish).
+- 📱 **Giao diện đáp ứng (Responsive)** - Chơi tốt trên cả máy tính và điện thoại.
+- 🚀 **Không cần cài đặt** - Chỉ cần mở trang web trên trình duyệt là có thể chơi ngay.
 
-2. Mở file `index.html` trực tiếp trong trình duyệt hoặc chạy server local:
-   ```bash
-   python -m http.server 8000
-   ```
-   Sau đó truy cập: `http://localhost:8000/index.html`
+## 🚀 Cách Chơi
 
-### Cấu Trúc File
-- [`index.html`](index.html): File HTML chính chứa giao diện.
-- [`script.js`](script.js): Logic game chính, xử lý di chuyển, AI, và giọng đọc.
-- [`ai.js`](ai.js): AI đơn giản (hiện tại chọn nước đi ngẫu nhiên).
-- [`sound.js`](sound.js): Quản lý âm thanh hiệu ứng và giọng đọc Google.
-- [`style.css`](style.css): CSS styling cho giao diện.
+1.  **Mở file `index.php`** trên một máy chủ web cục bộ (local server).
+2.  Một hộp thoại **Cài đặt trò chơi** sẽ hiện ra.
+3.  **Chọn độ khó** từ Cấp 1 đến Cấp 5.
+4.  **Chọn màu quân** bạn muốn cầm (Trắng hoặc Đen).
+5.  Nhấn nút **"BẮT ĐẦU CHƠI"**.
+6.  Sử dụng các nút điều khiển ở phía dưới để **Lùi lại** hoặc xem **Gợi ý**.
 
-## Công Nghệ Sử Dụng
+## 💻 Cài Đặt và Chạy Project
 
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+).
-- **Thư Viện**:
-  - [Chess.js](https://github.com/jhlywa/chess.js): Logic cờ vua.
-  - [Chessboard.js](https://chessboardjs.com/): Hiển thị bàn cờ.
-  - Bootstrap 5: UI components.
-  - Canvas Confetti: Hiệu ứng pháo hoa.
-- **Âm Thanh**: Web Audio API, giọng đọc Google TTS.
-- **Responsive**: CSS Grid và Media Queries.
+Do dự án sử dụng file `.php` để quản lý phiên bản cho các file CSS/JS, bạn cần chạy nó trên một máy chủ web có hỗ trợ PHP.
 
-## Phát Triển Thêm
+### Yêu cầu
 
-- AI hiện tại rất đơn giản (chọn ngẫu nhiên). Có thể nâng cấp bằng thuật toán Minimax hoặc sử dụng thư viện AI mạnh hơn.
-- Thêm chế độ chơi với người khác qua mạng.
-- Thêm các cấp độ khó khăn khác nhau.
+-   Một môi trường máy chủ web như [XAMPP](https://www.apachefriends.org/), [MAMP](https://www.mamp.info/) hoặc sử dụng chính câu lệnh của PHP.
 
-## Tác Giả
+### Hướng dẫn
 
-- **Phu Digital Vibe Coding**: Phát triển và bảo trì.
-- Phiên bản: 1.9.
+1.  **Tải mã nguồn về:**
+    ```bash
+    git clone [URL_CUA_REPO_NAY]
+    cd co-vua
+    ```
 
-## Giấy Phép
+2.  **Cách 1: Dùng server tích hợp của PHP (Đơn giản nhất)**
+    -   Mở Terminal hoặc Command Prompt trong thư mục `co-vua`.
+    -   Chạy lệnh sau:
+        ```bash
+        php -S localhost:8000
+        ```
+    -   Mở trình duyệt và truy cập vào địa chỉ `http://localhost:8000`.
 
-Dự án này được phân phối dưới giấy phép MIT. Xem file LICENSE để biết thêm chi tiết.
+3.  **Cách 2: Dùng XAMPP/MAMP**
+    -   Copy thư mục `co-vua` vào thư mục `htdocs` (của XAMPP) hoặc `htdocs` (của MAMP).
+    -   Khởi động Apache server từ bảng điều khiển của XAMPP/MAMP.
+    -   Mở trình duyệt và truy cập `http://localhost/co-vua`.
 
-## Đóng Góp
+## 🛠️ Công Nghệ Sử Dụng
 
-Mọi đóng góp đều được chào đón! Hãy tạo issue hoặc pull request trên GitHub.
+| Công nghệ | Mục đích |
+|---|---|
+| [HTML/PHP](https://www.php.net/) | Cấu trúc trang web chính. |
+| [Tailwind CSS](https://tailwindcss.com/) | Framework CSS để xây dựng giao diện nhanh chóng. |
+| [JavaScript (ES6)](https://www.javascript.com/) | Xử lý logic chính của game. |
+| [Chess.js](https://github.com/jhlywa/chess.js) | Thư viện xử lý luật cờ, kiểm tra nước đi hợp lệ. |
+| [Chessground](https://github.com/lichess-org/chessground) | Thư viện hiển thị bàn cờ và xử lý tương tác kéo/thả quân cờ. |
+| [Stockfish.js](https://github.com/nmrugg/stockfish.js) | Engine cờ vua mạnh mẽ cho các cấp độ AI khó. |
+| [jQuery](https://jquery.com/) | Thư viện hỗ trợ thao tác DOM. |
+| [Canvas Confetti](https://github.com/catdad/canvas-confetti) | Tạo hiệu ứng pháo hoa khi chiến thắng. |
 
-## Liên Hệ
+### Cấu trúc Project
 
-Nếu có câu hỏi hoặc ý tưởng cải thiện, liên hệ qua email hoặc GitHub issues.
+```
+co-vua/
+├── index.php           # File giao diện chính
+├── style.css           # Các style tùy chỉnh bổ sung
+├── main.js             # Logic chính của game, điều khiển bàn cờ và sự kiện
+├── ai_controller.js    # Quản lý các cấp độ AI, gọi engine phù hợp
+└── sound/              # Chứa các file âm thanh (di chuyển, ăn quân...)
+```
+
+## 📄 Giấy phép
+
+Dự án này được cấp phép theo Giấy phép MIT - xem file `LICENSE` để biết chi tiết.
+
+## 🙏 Lời cảm ơn
+
+-   Cảm ơn các tác giả của **Chess.js**, **Chessground**, và **Stockfish.js** đã tạo ra những thư viện tuyệt vời.

@@ -1,111 +1,125 @@
-<?php $version = "2.62"; ?>
+<?php $VERSION = '2.2.52'; // Cập nhật version ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta property="og:title" content="Cờ Vua Cho Bé">
-    <meta property="og:description" content="Trò chơi cờ vua vui nhộn cho bé">
-    <meta property="og:image" content="co-vua/thumbnail.jpg">
-    <title>Cờ Vua Cho Bé</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
-    <link rel="stylesheet" href="style.css?v=<?php echo $version; ?>"><!-- Thêm dòng này trước các script khác -->
-    <script src="https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js"></script>
-</head>
-<body>
-
-    <div class="app-container">
-        <!-- 1. Header -->
-        <div class="top-bar">
-            <h1 class="game-title">🏰 Vua Cờ Nhí 🏰</h1>
-            <span class="version-info">Phiên bản <?php echo $version; ?> (Cập nhật: 05/01/2026)</span>
-        </div>
-
-        <!-- 2. Bàn cờ -->
-        <div class="board-area">
-            <div id="myBoard"></div>
-        </div>
-
-        <!-- HIỂN THỊ CHẾ ĐỘ CHƠI -->
-        <div id="ai-mode-display"></div>
-
-        <!-- 3. HỘP THÔNG BÁO & HƯỚNG DẪN (GỘP CHUNG) -->
-        <div id="move-hint" class="hint-box">
-            Chạm vào quân cờ để xem cách đi nhé!
-        </div>
-
-        <!-- 4. Nút bấm -->
-        <div class="bottom-controls">
-            <div class="row g-2">
-                <div class="col-6">
-                    <button id="btnUndo" class="btn-kid btn-undo">↩️ Đi lại</button>
-                </div>
-                <div class="col-6">
-                    <button id="btnNewGame" class="btn-kid btn-new">✨ Ván mới</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Chọn Màu -->
-    <div class="modal fade" id="colorModal" data-bs-backdrop="static" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header border-0 justify-content-center">
-                    <h4 class="fw-bold text-primary">🎯 Bé chọn đội nào? 🎯</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3 text-center">
-                        <label for="aiLevel" class="form-label fw-bold text-success">Chọn độ khó:</label>
-                        <select class="form-select form-select-sm w-50 mx-auto" id="aiLevel">
-                            <option value="0">Tập chơi 🍼</option>
-                            <option value="1">Nghiêm túc 💪</option>
-                            <option value="2">Thách đấu 🤔</option>
-                            <option value="max">Trùm cuối 👾</option>
-                        </select>
-                    </div>
-                    <div class="row text-center">
-                        <div class="col-6" onclick="chooseColor('white')">
-                            <div class="color-choice">
-                                <div class="team-icon">👑</div>
-                                <img src="https://chessboardjs.com/img/chesspieces/wikipedia/wK.png" class="color-img">
-                                <h5 class="mt-2 text-dark fw-bold">Đội Trắng</h5>
-                                <p class="text-muted small">Đi trước</p>
-                            </div>
-                        </div>
-                        <div class="col-6" onclick="chooseColor('black')">
-                            <div class="color-choice">
-                                <div class="team-icon">⚔️</div>
-                                <img src="https://chessboardjs.com/img/chesspieces/wikipedia/bK.png" class="color-img">
-                                <h5 class="mt-2 text-dark fw-bold">Đội Đen</h5>
-                                <p class="text-muted small">Máy đi trước</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-4">
-                        <p class="text-primary fw-bold">💡 Chạm vào quân cờ để nghe hướng dẫn!</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <title>Cờ Vua Vui Vẻ</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/chessground@9.1.1/assets/chessground.base.css">
+    <link rel="stylesheet" href="https://unpkg.com/chessground@9.1.1/assets/chessground.cburnett.css">
+    <link rel="stylesheet" href="https://unpkg.com/chessground@9.1.1/assets/chessground.brown.css">
+    <script type="module">
+        import { Chessground } from 'https://unpkg.com/chessground@9.1.1/dist/chessground.min.js';
+        window.Chessground = Chessground;
+    </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- Stockfish Engine -->
-    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.min.js"></script> -->
-    <!-- Thêm dòng này trước các script khác -->
-    <script src="https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js"></script>
-    <!-- Tải script động để chống cache khi phát triển -->
-    <script src="sound.js?v=<?php echo $version; ?>"></script>
-    <script src="ai.js?v=<?php echo $version; ?>"></script>
-    <script src="ai-lv1.js?v=<?php echo $version; ?>"></script>
-    <script src="ai-lv2.js?v=<?php echo $version; ?>"></script>
-    <script src="ai-max.js?v=<?php echo $version; ?>"></script>
-    <script src="script.js?v=<?php echo $version; ?>"></script>
+    <link rel="stylesheet" href="style.css?v=<?= $VERSION ?>">
+</head>
+<body class="flex flex-col items-center justify-start h-screen w-screen bg-orange-50 overflow-hidden">
+
+    <!-- OVERLAY THÔNG BÁO KẾT QUẢ -->
+    <div id="game-overlay" style="display: none;">
+        <div class="overlay-text"></div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="fixed top-0 w-full pt-4 bg-orange-50/95 z-50 flex flex-col items-center border-orange-100">
+        <div class="text-center mb-1">
+            <h1 class="text-3xl font-black text-orange-600 leading-none">CỜ VUA VUI VẺ 🎲</h1>
+            <span class="text-[10px] font-bold text-orange-300 tracking-widest uppercase">Version <?= $VERSION ?></span>
+        </div>
+        
+        <div id="game-status" class="bg-white px-6 py-1 rounded-full text-sm font-bold text-gray-700 border-2 border-orange-200">
+            Bấm "Bắt đầu" để chơi nha!
+        </div>
+    </div>
+
+    <!-- GAME AREA -->
+    <div class="w-full h-full flex flex-col items-center justify-center gap-3">
+        <div id="board-container"></div>
+        <div id="current-level-badge" class="px-4 py-1.5 bg-white text-orange-600 text-xs font-bold rounded-full border border-orange-200 shadow-sm flex items-center gap-2">
+            <span class="animate-pulse">✨</span> Chọn cấp độ để bắt đầu
+        </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="fixed bottom-6 flex gap-3 z-50 w-full justify-center px-4">
+        <button onclick="window.gameController.openSetup()" class="btn-control bg-white p-3 rounded-xl shadow-lg text-gray-500 hover:text-orange-600 w-14 flex justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        </button>
+        <button id="undo-btn" class="btn-control bg-blue-500 px-6 py-3 rounded-xl shadow-lg text-white font-bold flex items-center justify-center gap-2 flex-grow max-w-[200px] active:bg-blue-600">
+            <span class="text-xl">↩️</span> LÙI LẠI
+        </button>
+        <button id="hint-btn" class="btn-control bg-yellow-400 p-3 rounded-xl shadow-lg text-white font-bold hover:bg-yellow-500 w-14 flex justify-center">
+            💡
+        </button>
+    </div>
+
+    <!-- SETUP MODAL -->
+    <div id="setup-modal">
+        <div class="modal-box">
+            <button id="modal-close-btn" class="close-btn" onclick="window.gameController.closeSetup()" style="display:none;">✕</button>
+
+            <h2 class="text-2xl font-black text-orange-600 mb-4 uppercase tracking-wide">Cài đặt trò chơi</h2>
+            
+            <div class="setup-group">
+                <span class="label-text">1. Chọn độ khó:</span>
+                <div class="flat-select-wrapper">
+                    <select id="level-select" class="flat-select">
+                        <option value="1">🐣 Cấp 1: Tập chơi (Rất Dễ)</option>
+                        <option value="2">🐤 Cấp 2: Biết chơi (Dễ)</option>
+                        <option value="3">🦊 Cấp 3: Thử thách (Vừa)</option>
+                        <option value="4">🐯 Cấp 4: Thông minh (Khó)</option>
+                        <option value="5">🦁 Cấp 5: Siêu đẳng (Rất Khó)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setup-group">
+                <span class="label-text">2. Bé muốn cầm quân gì?</span>
+                <div class="color-options">
+                    <div class="color-btn selected" onclick="selectColor('w', this)">
+                        <div class="w-8 h-8 rounded-full border border-gray-300 bg-white mb-1"></div>
+                        <span>Trắng</span>
+                    </div>
+                    <div class="color-btn" onclick="selectColor('b', this)">
+                        <div class="w-8 h-8 rounded-full border border-gray-600 bg-gray-800 mb-1"></div>
+                        <span>Đen</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ĐÃ XÓA PHẦN CHỌN MÀU NỀN BÀN CỜ -->
+
+            <button onclick="confirmSetup()" class="btn-start">BẮT ĐẦU CHƠI ▶</button>
+        </div>
+    </div>
+
+    <script src="ai_controller.js?v=<?= $VERSION ?>"></script>
+    <script src="main.js?v=<?= $VERSION ?>"></script>
+
+    <script>
+        let selectedColor = 'w';
+        function selectColor(color, el) {
+            selectedColor = color;
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+        function confirmSetup() {
+            if (typeof window.Chessground === 'undefined') {
+                alert("Đang tải bàn cờ, bé đợi xíu nha...");
+                return;
+            }
+            const level = document.getElementById('level-select').value;
+            document.getElementById('setup-modal').style.display = 'none';
+            window.gameController.startGame(parseInt(level), selectedColor);
+        }
+    </script>
 </body>
 </html>
