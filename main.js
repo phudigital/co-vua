@@ -63,7 +63,6 @@ class GameController {
     }
 
     startGame(level, color) {
-        this.ai.setLevel(level);
         this.playerColor = color;
         this.game.reset();
         this.isGameActive = true;
@@ -72,8 +71,7 @@ class GameController {
         $('#game-overlay').hide();
         clearTimeout(this.overlayTimer);
         
-        const levelText = this.levelNames[level] || "Cấp độ tùy chỉnh";
-        $('#current-level-badge').html(`<span class="animate-pulse">✨</span> Đang đấu với: ${levelText}`);
+        this.updateLevel(level);
 
         this.updateBoardUI();
         this.updateStatus();
@@ -82,6 +80,20 @@ class GameController {
         if (this.playerColor === 'b') {
             this.triggerAiMove();
         }
+    }
+
+    updateLevel(level) {
+        this.ai.setLevel(level);
+        const levelText = this.levelNames[level] || "Cấp độ tùy chỉnh";
+        
+        const badge = $('#current-level-badge');
+        badge.html(`<span class="animate-pulse">✨</span> ${levelText}`);
+        
+        // Hiệu ứng nháy nền nhẹ để báo hiệu đã cập nhật
+        badge.addClass('bg-yellow-200 rounded-lg transition-colors duration-500');
+        setTimeout(() => {
+            badge.removeClass('bg-yellow-200');
+        }, 500);
     }
 
     undoMove() {
@@ -103,12 +115,26 @@ class GameController {
     }
 
     openSetup() {
-        document.getElementById('setup-modal').style.display = 'flex';
+        const modal = document.getElementById('setup-modal');
+        const select = document.getElementById('level-select');
+        
+        // Đồng bộ select với level hiện tại của AI
+        if (select && this.ai && this.ai.level) {
+            select.value = this.ai.level;
+        }
+
+        modal.style.display = 'flex';
         const closeBtn = document.getElementById('modal-close-btn');
         closeBtn.style.display = (this.isGameActive || this.game.game_over()) ? 'flex' : 'none';
     }
 
     closeSetup() {
+        // Cập nhật level mới ngay khi đóng modal (nếu đang chơi)
+        const select = document.getElementById('level-select');
+        if (select) {
+            const newLevel = parseInt(select.value);
+            this.updateLevel(newLevel);
+        }
         document.getElementById('setup-modal').style.display = 'none';
     }
 
@@ -181,22 +207,29 @@ class GameController {
         if (!container) return;
         const isInteractable = this.isGameActive && !this.game.game_over();
 
+        // Lấy thông tin nước đi cuối để vẽ mũi tên
+        const history = this.game.history({verbose: true});
+        const lastMove = history.length > 0 ? history[history.length - 1] : null;
+
         const config = {
             fen: this.game.fen(),
             orientation: this.playerColor === 'w' ? 'white' : 'black',
             turnColor: this.game.turn() === 'w' ? 'white' : 'black',
             coordinates: false,
-            animation: { enabled: true, duration: 300 },
+            // Tăng thời gian animation lên 1s (1000ms) để bé nhìn rõ quân "chạy"
+            animation: { enabled: true, duration: 1000 },
             movable: {
                 color: isInteractable ? (this.playerColor === 'w' ? 'white' : 'black') : null,
                 free: false,
                 dests: this.getValidMoves(),
                 events: { after: (orig, dest) => this.onPlayerMove(orig, dest) }
             },
-            drawable: { enabled: true, visible: true },
-            lastMove: this.game.history({verbose: true}).length > 0 ? 
-                      [this.game.history({verbose: true}).slice(-1)[0].from, 
-                       this.game.history({verbose: true}).slice(-1)[0].to] : null
+            drawable: { 
+                enabled: true, 
+                visible: true,
+                shapes: this.getLastMoveArrow() 
+            },
+            lastMove: lastMove ? [lastMove.from, lastMove.to] : null
         };
 
         if (!this.board) {
@@ -216,13 +249,31 @@ class GameController {
         return dests;
     }
 
+    getLastMoveArrow() {
+        const history = this.game.history({verbose: true});
+        if (history.length === 0) return [];
+        const last = history[history.length - 1];
+        return [{ 
+            orig: last.from, 
+            dest: last.to, 
+            brush: 'green',
+            modifiers: { lineWidth: 4 } // Mũi tên đậm hơn chút
+        }];
+    }
+
     onPlayerMove(orig, dest) {
         if (!this.isGameActive) return;
         const move = this.game.move({ from: orig, to: dest, promotion: 'q' });
         if (move) {
             this.playSound('move');
+            
+            // Vẽ mũi tên ngay sau khi đi
+            this.board.set({ 
+                drawable: { shapes: this.getLastMoveArrow() },
+                movable: { color: null } 
+            });
+
             this.updateStatus();
-            this.board.set({ movable: { color: null } });
             if (!this.game.game_over()) {
                 this.triggerAiMove();
             }
@@ -260,7 +311,9 @@ class GameController {
                 movable: {
                     color: this.playerColor === 'w' ? 'white' : 'black',
                     dests: this.getValidMoves()
-                }
+                },
+                // Vẽ mũi tên cho nước đi của máy
+                drawable: { shapes: this.getLastMoveArrow() }
             });
             this.playSound('move');
             
@@ -276,6 +329,8 @@ class GameController {
         if (!this.game.in_checkmate()) {
             this.removeDangerEffect();
         }
+    // ... rest of updateStatus implementation
+
 
         if (this.game.game_over()) {
             this.isGameActive = false;
