@@ -216,8 +216,8 @@ class GameController {
             orientation: this.playerColor === 'w' ? 'white' : 'black',
             turnColor: this.game.turn() === 'w' ? 'white' : 'black',
             coordinates: false,
-            // Tăng thời gian animation lên 1s (1000ms) để bé nhìn rõ quân "chạy"
-            animation: { enabled: true, duration: 1000 },
+            // Mặc định 500ms cho các thao tác chung (Undo, Reset)
+            animation: { enabled: true, duration: 500 },
             movable: {
                 color: isInteractable ? (this.playerColor === 'w' ? 'white' : 'black') : null,
                 free: false,
@@ -257,8 +257,23 @@ class GameController {
             orig: last.from, 
             dest: last.to, 
             brush: 'green',
-            modifiers: { lineWidth: 4 } // Mũi tên đậm hơn chút
+            modifiers: { lineWidth: 4 }
         }];
+    }
+
+    // Tính thời gian dựa trên khoảng cách để tốc độ di chuyển đều nhau
+    calculateMoveDuration(from, to) {
+        const fileMap = { 'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8 };
+        const x1 = fileMap[from[0]];
+        const y1 = parseInt(from[1]);
+        const x2 = fileMap[to[0]];
+        const y2 = parseInt(to[1]);
+        
+        const dist = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        
+        // Tốc độ: 300ms cho mỗi ô đơn vị khoảng cách. Tối thiểu 400ms.
+        // VD: Đi 1 ô = 400ms. Đi chéo bàn cờ (~9.8 ô) = ~3000ms
+        return Math.max(400, Math.round(dist * 300));
     }
 
     onPlayerMove(orig, dest) {
@@ -267,15 +282,37 @@ class GameController {
         if (move) {
             this.playSound('move');
             
-            // Vẽ mũi tên ngay sau khi đi
+            // Nếu ăn quân, bắn pháo hoa
+            if (move.captured) {
+                this.playSound('capture');
+                this.triggerCaptureEffect(dest, true);
+            }
+
             this.board.set({ 
                 drawable: { shapes: this.getLastMoveArrow() },
                 movable: { color: null } 
             });
 
             this.updateStatus();
-            if (!this.game.game_over()) {
-                this.triggerAiMove();
+
+            // Kiểm tra nước đi đặc biệt
+            let specialMessage = '';
+            if (move.flags.includes('e')) {
+                specialMessage = "BẮT TỐT<br>QUA ĐƯỜNG! 😲";
+            } else if (move.flags.includes('p') || move.flags.includes('cp')) {
+                specialMessage = "PHONG HẬU! 😎";
+            }
+
+            if (specialMessage) {
+                this.showGameResultOverlay(specialMessage, false);
+                // Nếu có thông báo đặc biệt, đợi thêm 2s (tổng cộng delay AI sẽ lâu hơn)
+                if (!this.game.game_over()) {
+                     setTimeout(() => this.triggerAiMove(), 2000); 
+                }
+            } else {
+                if (!this.game.game_over()) {
+                    this.triggerAiMove();
+                }
             }
         } else {
             this.board.set({ fen: this.game.fen() });
@@ -284,9 +321,12 @@ class GameController {
 
     triggerAiMove() {
         $('#game-status').text('🤔 Máy đang nghĩ...');
-        this.ai.getMove(this.game, (bestMove) => {
-            this.onAiMove(bestMove);
-        });
+        // Đặt độ trễ tối thiểu 1.5s (1500ms) để bé kịp nhìn
+        setTimeout(() => {
+            this.ai.getMove(this.game, (bestMove) => {
+                this.onAiMove(bestMove);
+            });
+        }, 1500);
     }
 
     onAiMove(moveData) {
@@ -304,20 +344,28 @@ class GameController {
         } catch (e) { return; }
 
         if (move) {
+            // Tính thời gian riêng cho nước đi này
+            const moveDuration = this.calculateMoveDuration(move.from, move.to);
+
+            // Nếu máy ăn quân bé, hiệu ứng vỡ vụn
+            if (move.captured) {
+                this.playSound('capture');
+                this.triggerCaptureEffect(move.to, false);
+            }
+
             this.board.set({
                 fen: this.game.fen(),
                 lastMove: [move.from, move.to],
                 turnColor: this.playerColor === 'w' ? 'white' : 'black',
+                animation: { enabled: true, duration: moveDuration }, // Áp dụng thời gian động
                 movable: {
                     color: this.playerColor === 'w' ? 'white' : 'black',
                     dests: this.getValidMoves()
                 },
-                // Vẽ mũi tên cho nước đi của máy
                 drawable: { shapes: this.getLastMoveArrow() }
             });
             this.playSound('move');
             
-            // Xóa highlight cũ đi trước khi updateStatus
             this.removeDangerEffect();
             
             this.updateStatus();
@@ -424,6 +472,77 @@ class GameController {
             this.onAiMove(bestMove);
         });
     }
+    // Hiệu ứng ăn quân
+    triggerCaptureEffect(square, isPlayerCapturing) {
+        const coords = this.getSquareScreenCoordinates(square);
+        if (!coords) return;
+
+        if (isPlayerCapturing) {
+            // Hiệu ứng pháo hoa vui vẻ (nhiều màu)
+            try {
+                confetti({
+                    particleCount: 60,
+                    spread: 70,
+                    origin: coords,
+                    colors: ['#22c55e', '#eab308', '#3b82f6', '#ef4444'], // Xanh, Vàng, Lam, Đỏ
+                    gravity: 1.2,
+                    scalar: 0.8,
+                    disableForReducedMotion: true
+                });
+            } catch(e) { console.error(e); }
+        } else {
+            // Hiệu ứng "vỡ vụn" (màu xám/đen/trắng tùy quân bị ăn)
+            // Quân bị ăn là quân của người chơi
+            const pieceColor = this.playerColor === 'w' ? '#f3f4f6' : '#374151'; // Trắng hoặc Đen xám
+            try {
+                confetti({
+                    particleCount: 40,
+                    spread: 50,
+                    origin: coords,
+                    colors: [pieceColor, '#9ca3af'], // Màu quân + Màu xám
+                    gravity: 2, // Rơi nhanh hơn như mảnh vỡ
+                    startVelocity: 20,
+                    ticks: 100, // Biến mất nhanh hơn
+                    shapes: ['square'], // Hình vuông sắc cạnh
+                    scalar: 0.6,
+                    disableForReducedMotion: true
+                });
+            } catch(e) { console.error(e); }
+        }
+    }
+
+    getSquareScreenCoordinates(square) {
+        const container = document.getElementById('board-container');
+        if (!container) return null;
+        
+        const rect = container.getBoundingClientRect();
+        const file = square.charCodeAt(0) - 97; // a=0, b=1...
+        const rank = parseInt(square[1]) - 1;   // 1=0, 2=1...
+
+        const isWhiteOrient = this.board && this.board.state.orientation === 'white';
+        // Note: this.board.state.orientation might vary, fallback to comparing playerColor if undefined
+        // Actually best to rely on current setting
+        
+        const isWhiteSide = (this.playerColor === 'w');
+        
+        // Tính vị trí ô cờ (0-7)
+        const x = isWhiteSide ? file : (7 - file);
+        const y = isWhiteSide ? (7 - rank) : rank;
+
+        const squareWidth = rect.width / 8;
+        const squareHeight = rect.height / 8;
+
+        // Tính tâm ô cờ so với màn hình
+        const centerX = rect.left + (x * squareWidth) + (squareWidth / 2);
+        const centerY = rect.top + (y * squareHeight) + (squareHeight / 2);
+
+        // Chuyển về tỉ lệ 0-1 cho confetti
+        return {
+            x: centerX / window.innerWidth,
+            y: centerY / window.innerHeight
+        };
+    }
+
 
     showHint() {
         if (this.game.turn() !== this.playerColor || this.game.game_over()) return;

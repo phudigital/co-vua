@@ -1,4 +1,4 @@
-<?php $VERSION = '2.31'; // Cập nhật version ?>
+<?php $VERSION = '2.362'; // Cập nhật version ?>
 <!DOCTYPE html>
 <html lang="vi">
 
