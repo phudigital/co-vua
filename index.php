@@ -1,17 +1,33 @@
-<?php $VERSION = '2.41'; // Cập nhật version ?>
+<?php $VERSION = '2.66'; // Cập nhật version ?>
 <!DOCTYPE html>
 <html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cờ Vua Vui Vẻ</title>
-    <meta property="og:title" content="Cờ Vua Vui Vẻ">
+    <title>Cờ Vua Vui Vẻ - Bé Học Chơi Cờ Vua</title>
+    <meta name="description"
+        content="Trò chơi cờ vua hấp dẫn dành cho trẻ em với nhiều cấp độ từ Gà Con đến Bác Phú. Giúp bé phát triển tư duy sáng tạo và rèn luyện trí thông minh mỗi ngày.">
+    <meta name="keywords" content="cờ vua, trẻ em, học chơi cờ vua, game trí tuệ, cờ vua vui vẻ">
+    <meta name="author" content="Phu Digital">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://app.pdl.vn/co-vua/">
+    <meta property="og:title" content="Cờ Vua Vui Vẻ - Bé Học Chơi Cờ Vua">
     <meta property="og:description"
         content="Cờ Vua Vui Vẻ - Trò chơi cờ vua hấp dẫn được thiết kế đặc biệt giúp trẻ em dễ dàng tập chơi và phát triển tư duy.">
-    <meta property="og:image" content="co-vua/assets/thumbnail.jpg">
-    <meta property="og:url" content="">
-    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/thumbnail.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://app.pdl.vn/co-vua/">
+    <meta property="twitter:title" content="Cờ Vua Vui Vẻ - Bé Học Chơi Cờ Vua">
+    <meta property="twitter:description"
+        content="Học chơi cờ vua cực dễ cùng Gà Con, Vịt Vàng và nhiều bạn nhỏ khác! Game trí tuệ dành riêng cho bé.">
+    <meta property="twitter:image" content="assets/thumbnail.jpg">
+
+    <link rel="icon" type="image/jpeg" href="assets/thumbnail.jpg">
 
 
 
@@ -100,7 +116,7 @@
                         <option value="2">🐤 Cấp 2: Biết chơi</option>
                         <option value="3">🦊 Cấp 3: Thử thách</option>
                         <option value="4">🐯 Cấp 4: Thông minh</option>
-                        <option value="5">🦁 Cấp 5: Siêu đẳng</option>
+                        <option value="5">🦁 Cấp 5: Kỹ Sư Phú</option>
                     </select>
                 </div>
             </div>

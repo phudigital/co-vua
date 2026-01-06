@@ -1,5 +1,5 @@
 /**
- * Main Game Controller v2.38.0
+ * Main Game Controller v2.62
  * Phiên bản ổn định: Fix lỗi bàn cờ, tối ưu hiệu ứng & âm thanh
  */
 class GameController {
@@ -9,8 +9,10 @@ class GameController {
         this.board = null;
         this.playerColor = 'w';
         this.isGameActive = false;
+        this.currentLevel = 1;
         this.gameOverMessage = '';
         this.overlayTimer = null;
+        this.autoSetupTimer = null;
         this.userHasInteracted = false;
 
         this.levelNames = {
@@ -18,7 +20,15 @@ class GameController {
             2: "🐤 Cấp 2: Biết chơi (Dễ)",
             3: "🦊 Cấp 3: Thử thách (Vừa)",
             4: "🐯 Cấp 4: Thông minh (Khó)",
-            5: "🦁 Cấp 5: Siêu đẳng (Rất Khó)"
+            5: "🦁 Cấp 5: Kỹ Sư Phú (Rất Khó)"
+        };
+
+        this.charNames = {
+            1: "🐣 Gà con",
+            2: "🐤 Bạn Vịt",
+            3: "🦊 Anh Cáo",
+            4: "🐯 Chú Hổ",
+            5: "🦁 KS Phú"
         };
 
         this.sounds = {
@@ -27,7 +37,11 @@ class GameController {
             check: this.loadSound('check'),
             victory: this.loadSound('victory'),
             defeat: this.loadSound('defeat'),
-            start: this.loadSound('tournament3rd')
+            start: this.loadSound('tournament3rd'),
+            victory_kid: this.loadSound('chien-thang'),
+            defeat_kid: this.loadSound('thua-cuoc'),
+            defeat_lv4: this.loadSound('thua-cuoc-lv4'),
+            defeat_lv5: this.loadSound('thua-cuoc-lv5')
         };
         Object.values(this.sounds).forEach(s => s.load());
 
@@ -86,6 +100,7 @@ class GameController {
 
         $('#game-overlay').hide();
         clearTimeout(this.overlayTimer);
+        clearTimeout(this.autoSetupTimer);
         
         this.updateLevel(level);
 
@@ -99,6 +114,7 @@ class GameController {
     }
 
     updateLevel(level) {
+        this.currentLevel = level;
         this.ai.setLevel(level);
         const levelText = this.levelNames[level] || "Cấp độ tùy chỉnh";
         
@@ -116,6 +132,7 @@ class GameController {
         if (this.game.history().length === 0) return;
         $('#game-overlay').hide();
         clearTimeout(this.overlayTimer);
+        clearTimeout(this.autoSetupTimer);
         
         if (this.game.game_over()) {
             this.game.undo();
@@ -153,10 +170,14 @@ class GameController {
     }
 
     playSound(type) {
-        if (['start', 'victory', 'defeat'].includes(type)) {
-             this.sounds['victory'].pause(); this.sounds['victory'].currentTime = 0;
-             this.sounds['defeat'].pause(); this.sounds['defeat'].currentTime = 0;
-             this.sounds['start'].pause(); this.sounds['start'].currentTime = 0;
+        const musicTypes = ['start', 'victory', 'defeat', 'victory_kid', 'defeat_kid', 'defeat_lv4', 'defeat_lv5'];
+        if (musicTypes.includes(type)) {
+            musicTypes.forEach(t => {
+                if (this.sounds[t]) {
+                    this.sounds[t].pause();
+                    this.sounds[t].currentTime = 0;
+                }
+            });
         }
         if (this.sounds[type]) {
             if (this.userHasInteracted || ['check', 'move', 'capture'].includes(type)) {
@@ -324,7 +345,8 @@ class GameController {
     }
 
     triggerAiMove() {
-        $('#game-status').text('🤔 Máy đang nghĩ...');
+        const charName = this.charNames[this.currentLevel] || "Máy";
+        $('#game-status').text(`${charName} đang suy nghĩ...`);
         setTimeout(() => {
             this.ai.getMove(this.game, (bestMove) => {
                 this.onAiMove(bestMove);
@@ -387,11 +409,17 @@ class GameController {
                 this.triggerCheckWarning(); 
 
                 if (this.game.turn() !== this.playerColor) {
-                    this.gameOverMessage = "BÉ GIỎI QUÁ!<br>THẮNG RỒI 🏆";
-                    playSoundName = 'victory';
+                    const charName = this.charNames[this.currentLevel] || "Máy";
+                    this.gameOverMessage = `BÉ THẮNG ${charName.toUpperCase()}<br>RỒI! GIỎI QUÁ 🏆`;
                     
-                    // Pháo hoa chiến thắng 3 giây
-                    const end = Date.now() + 3000;
+                    if ([1, 2, 3].includes(this.currentLevel)) {
+                        playSoundName = 'victory_kid';
+                    } else {
+                        playSoundName = 'victory';
+                    }
+                    
+                    // Pháo hoa chiến thắng 5 giây
+                    const end = Date.now() + 5500;
                     const colors = ['#22c55e', '#ffffff', '#fbbf24', '#ef4444'];
                     
                     (function frame() {
@@ -416,11 +444,22 @@ class GameController {
                         }
                     }());
                     
-                    $('#game-status').html('<span class="text-green-600">🏆 BÉ THẮNG RỒI!</span>');
+                    $('#game-status').html(`<span class="text-green-600">🏆 BÉ THẮNG ${charName.toUpperCase()} RỒI!</span>`);
                 } else {
-                    this.gameOverMessage = "BÉ THUA RỒI<br>TIẾC QUÁ 😢";
-                    playSoundName = 'defeat';
-                    $('#game-status').html('<span class="text-red-500">😅 Bé thua rồi.</span>');
+                    const charName = this.charNames[this.currentLevel] || "Máy";
+                    this.gameOverMessage = `${charName.toUpperCase()} THẮNG RỒI<br>BÉ CỐ LÊN NHÉ 😢`;
+                    
+                    if ([1, 2, 3].includes(this.currentLevel)) {
+                        playSoundName = 'defeat_kid';
+                    } else if (this.currentLevel === 4) {
+                        playSoundName = 'defeat_lv4';
+                    } else if (this.currentLevel === 5) {
+                        playSoundName = 'defeat_lv5';
+                    } else {
+                        playSoundName = 'defeat';
+                    }
+
+                    $('#game-status').html(`<span class="text-red-500">😅 ${charName} thắng rồi.</span>`);
                 }
             } else if (this.game.in_draw()) {
                 this.gameOverMessage = "HÒA RỒI!<br>BẮT TAY NÀO 🤝";
@@ -433,18 +472,25 @@ class GameController {
                 this.playSound(playSoundName);
             }
 
-            clearTimeout(this.overlayTimer);
             this.overlayTimer = setTimeout(() => {
                 this.showGameResultOverlay(this.gameOverMessage, false);
             }, 2000);
 
+            // Tự động hiện bảng cài đặt sau 10 giây
+            clearTimeout(this.autoSetupTimer);
+            this.autoSetupTimer = setTimeout(() => {
+                this.openSetup();
+            }, 10000);
+
         } else {
             if (this.game.in_check()) {
                 if (this.game.turn() === this.playerColor) {
-                    $('#game-status').html('<span class="text-red-600 font-black">⚡ CỨU VUA NGAY!</span>');
+                    const charName = this.charNames[this.currentLevel] || "Máy";
+                    $('#game-status').html(`<span class="text-red-600 font-black">⚡ ${charName.toUpperCase()} ĐANG CHIẾU!</span>`);
                     this.triggerCheckWarning(); 
                 } else {
-                    $('#game-status').text('🔥 Bé đang chiếu máy!');
+                    const charName = this.charNames[this.currentLevel] || "Máy";
+                    $('#game-status').text(`🔥 Bé đang chiếu ${charName}!`);
                     this.playSound('check');
                 }
             } else {
