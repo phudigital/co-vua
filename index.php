@@ -1,4 +1,4 @@
-<?php $VERSION = '2.362'; // Cập nhật version ?>
+<?php $VERSION = '2.41'; // Cập nhật version ?>
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -9,7 +9,7 @@
     <meta property="og:title" content="Cờ Vua Vui Vẻ">
     <meta property="og:description"
         content="Cờ Vua Vui Vẻ - Trò chơi cờ vua hấp dẫn được thiết kế đặc biệt giúp trẻ em dễ dàng tập chơi và phát triển tư duy.">
-    <meta property="og:image" content="co-vua/thumbnail.jpg">
+    <meta property="og:image" content="co-vua/assets/thumbnail.jpg">
     <meta property="og:url" content="">
     <meta property="og:type" content="website">
 
