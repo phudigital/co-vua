@@ -1,10 +1,14 @@
-<?php $VERSION = '2.66'; // Cập nhật version ?>
+<?php $VERSION = '2.67'; // Cập nhật version ?>
 <!DOCTYPE html>
 <html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cờ Vua Vui">
     <title>Cờ Vua Vui Vẻ - Bé Học Chơi Cờ Vua</title>
     <meta name="description"
         content="Trò chơi cờ vua hấp dẫn dành cho trẻ em với nhiều cấp độ từ Gà Con đến Bác Phú. Giúp bé phát triển tư duy sáng tạo và rèn luyện trí thông minh mỗi ngày.">
@@ -17,7 +21,7 @@
     <meta property="og:title" content="Cờ Vua Vui Vẻ - Bé Học Chơi Cờ Vua">
     <meta property="og:description"
         content="Cờ Vua Vui Vẻ - Trò chơi cờ vua hấp dẫn được thiết kế đặc biệt giúp trẻ em dễ dàng tập chơi và phát triển tư duy.">
-    <meta property="og:image" content="assets/thumbnail.jpg">
+    <meta property="og:image" content="co-vua/assets/thumbnail.jpg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -25,9 +29,9 @@
     <meta property="twitter:title" content="Cờ Vua Vui Vẻ - Bé Học Chơi Cờ Vua">
     <meta property="twitter:description"
         content="Học chơi cờ vua cực dễ cùng Gà Con, Vịt Vàng và nhiều bạn nhỏ khác! Game trí tuệ dành riêng cho bé.">
-    <meta property="twitter:image" content="assets/thumbnail.jpg">
+    <meta property="twitter:image" content="co-vua/assets/thumbnail.jpg">
 
-    <link rel="icon" type="image/jpeg" href="assets/thumbnail.jpg">
+    <link rel="icon" type="image/jpeg" href="co-vua/assets/thumbnail.jpg">
 
 
 
@@ -145,6 +149,15 @@
     <script src="main.js?v=<?= $VERSION ?>"></script>
 
     <script>
+        // Fix Zoom Mobile: Prevent double-tap and pinch zoom
+        document.addEventListener('dblclick', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+        
+        document.addEventListener('gesturestart', function(e) {
+            e.preventDefault();
+        });
+
         let selectedColor = 'w';
         function selectColor(color, el) {
             selectedColor = color;
