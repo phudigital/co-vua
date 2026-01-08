@@ -1,4 +1,4 @@
-<?php $VERSION = '2.67'; // Cập nhật version ?>
+<?php $VERSION = '2.7'; // Cập nhật version ?>
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -116,11 +116,11 @@
                 <span class="label-text">1. Chọn độ khó:</span>
                 <div class="flat-select-wrapper">
                     <select id="level-select" class="flat-select">
-                        <option value="1">🐣 Cấp 1: Tập chơi</option>
-                        <option value="2">🐤 Cấp 2: Biết chơi</option>
-                        <option value="3">🦊 Cấp 3: Thử thách</option>
-                        <option value="4">🐯 Cấp 4: Thông minh</option>
-                        <option value="5">🦁 Cấp 5: Kỹ Sư Phú</option>
+                        <option value="1">🐣 Cấp 1: Gà Con (Rất Dễ)</option>
+                        <option value="2">🐤 Cấp 2: Bạn Vịt (Dễ)</option>
+                        <option value="3">🦊 Cấp 3: Anh Sói (Vừa)</option>
+                        <option value="4">🐯 Cấp 4: Bác Hổ (Khó)</option>
+                        <option value="5">🦁 Cấp 5: Lão Sư Tử (Rất Khó)</option>
                     </select>
                 </div>
             </div>
