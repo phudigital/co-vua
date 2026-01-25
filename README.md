@@ -1,16 +1,16 @@
-# ♟️ Cờ Vua Vui Vẻ - v2.76
+# ♟️ Cờ Vua Vui Vẻ - v2.15
 
 > Một thế giới cờ vua đầy màu sắc, vui nhộn và thông minh dành cho bé (và cả người lớn!). Thiết kế hiện đại, hiệu ứng sinh động và trải nghiệm mượt mà trên mọi thiết bị.
 
 ---
 
 <p align="center">
-  <img src="https://img.shields.io/badge/VERSION-2.76-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/VERSION-2.15-blue?style=for-the-badge" />
   <img src="https://img.shields.io/badge/MOBILE-READY-orange?style=for-the-badge&logo=android&logoColor=white" />
   <img src="https://img.shields.io/badge/AI-CHARACTERS-green?style=for-the-badge" />
 </p>
 
-## ✨ Những điểm nổi bật (Mới nhất v2.76)
+## ✨ Những điểm nổi bật (Mới nhất v2.15)
 
 Khác với những bàn cờ vua khô khan, **Cờ Vua Vui Vẻ** được thiết kế để "trò chuyện" và tương tác với bé:
 
@@ -19,7 +19,12 @@ Khác với những bàn cờ vua khô khan, **Cờ Vua Vui Vẻ** được thi�
   - 🐤 **Bạn Vịt**: Cấp 2 - Biết chơi (Dễ).
   - 🦊 **Anh Cáo**: Cấp 3 - Thử thách (Vừa).
   - 🐯 **Chú Hổ**: Cấp 4 - Thông minh (Khó).
-  - 🦁 **KS Phú**: Cấp 5 - Kỹ sư (Rất khó).
+  - 🦁 **Lão Sư Tử**: Cấp 5 - Kỹ sư (Rất khó).
+  - 🤖 **Siêu Trí Tuệ**: Cấp 6 - AI Master (Dùng Mistral AI).
+- 🚀 **Chế độ chơi Online (2 người)**:
+  - Tạo phòng chơi cùng bạn bè dễ dàng.
+  - Hiệu ứng pháo hoa, âm thanh sống động đồng bộ giữa 2 người chơi.
+  - Chat nhanh bằng các emotion vui nhộn.
 - 🎉 **Hiệu ứng cực đã**:
   - **Pháo hoa chiến thắng** tưng bừng khi bé giành cúp.
   - **Hiệu ứng Bắt quân**: Confetti màu sắc khi bé ăn quân, và hiệu ứng vỡ vụn khi bị đối thủ ăn.
