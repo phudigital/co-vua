@@ -10,6 +10,10 @@
   <img src="https://img.shields.io/badge/AI-CHARACTERS-green?style=for-the-badge" />
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/phudigital/co-vua/main/assets/thumbnail_v2.15.png" alt="Cờ Vua Vui Vẻ" width="100%" style="border-radius: 20px;" />
+</p>
+
 ## ✨ Những điểm nổi bật (Mới nhất v2.15)
 
 Khác với những bàn cờ vua khô khan, **Cờ Vua Vui Vẻ** được thiết kế để "trò chuyện" và tương tác với bé:
