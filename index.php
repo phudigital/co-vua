@@ -1,4 +1,4 @@
-<?php $VERSION = '2.7'; // Cập nhật version ?>
+<?php $VERSION = '2.14'; // Cập nhật version ?>
 <!DOCTYPE html>
 <html lang="vi">
 
@@ -62,10 +62,17 @@
     <div class="fixed top-0 w-full pt-4 pb-4 bg-orange-50/95 z-50 flex flex-col items-center justify-center shadow-sm">
 
         <div class="text-center mb-2">
-            <h1 class="text-3xl font-black text-orange-600 leading-none">CỜ VUA VUI VẺ 🎲</h1>
-
-            <img src="https://img.shields.io/badge/version-<?= $VERSION ?>-blue.svg" alt="Version <?= $VERSION ?>"
-                class="h-5 mt-2 shadow-sm opacity-90 mx-auto">
+            <h1 id="hidden-hint-btn" class="text-3xl font-black text-orange-600 leading-none cursor-pointer" onclick="window.gameController.showHint()">CỜ VUA VUI VẺ 🎲</h1>
+            
+            <div id="header-badge-area" class="h-8 flex items-center justify-center mt-1">
+                <div id="version-badge">
+                    <img src="https://img.shields.io/badge/version-<?= $VERSION ?>-blue.svg" alt="Version <?= $VERSION ?>"
+                        class="h-5 shadow-sm opacity-90">
+                </div>
+                <div id="check-badge" class="hidden text-red-600 font-black text-sm animate-pulse">
+                    ⚡ ĐANG CHIẾU! ⚡
+                </div>
+            </div>
         </div>
 
         <div id="game-status" class="text-sm font-bold text-gray-700 text-center">
@@ -74,11 +81,25 @@
     </div>
 
     <!-- GAME AREA -->
-    <div class="w-full h-full flex flex-col items-center justify-center gap-3">
+    <div class="w-full h-full flex flex-col items-center justify-start gap-3 overflow-y-auto pt-36 pb-32">
         <div id="board-container"></div>
+        
         <div id="current-level-badge"
             class="px-4 py-1.5 text-orange-600 text-xs font-bold flex items-center justify-center gap-2">
             <span class="animate-pulse">✨</span> Chọn cấp độ để bắt đầu
+        </div>
+
+        <!-- ĐÃ XÓA BÁO CÁO INLINE TẠI ĐÂY -->
+    </div>
+
+    <!-- MODAL PHÂN TÍCH VÁN ĐẤU (LV6) -->
+    <div id="analysis-modal" style="display: none;" class="fixed inset-0 bg-orange-50/95 z-[10000] flex items-center justify-center">
+        <div class="modal-box max-w-[450px]">
+            <button class="close-btn" onclick="$('#analysis-modal').fadeOut()">✕</button>
+            <div id="analysis-report-content">
+                <!-- Nội dung báo cáo sẽ được chèn vào đây -->
+            </div>
+            <button onclick="$('#analysis-modal').fadeOut()" class="btn-start mt-6">ĐÃ HIỂU, XEM BÀN CỜ</button>
         </div>
     </div>
 
@@ -107,8 +128,7 @@
     <!-- SETUP MODAL -->
     <div id="setup-modal">
         <div class="modal-box">
-            <button id="modal-close-btn" class="close-btn" onclick="window.gameController.closeSetup()"
-                style="display:none;">✕</button>
+            <button id="modal-close-btn" class="close-btn" onclick="window.gameController.closeSetup()">✕</button>
 
             <h2 class="text-2xl font-black text-orange-600 mb-4 uppercase tracking-wide">Cài đặt trò chơi</h2>
 
@@ -121,6 +141,7 @@
                         <option value="3">🦊 Cấp 3: Anh Sói (Vừa)</option>
                         <option value="4">🐯 Cấp 4: Bác Hổ (Khó)</option>
                         <option value="5">🦁 Cấp 5: Lão Sư Tử (Rất Khó)</option>
+                        <option value="6">🤖 Cấp 6: Siêu Trí Tuệ (AI)</option>
                     </select>
                 </div>
             </div>
@@ -140,12 +161,38 @@
             </div>
 
             <!-- ĐÃ XÓA PHẦN CHỌN MÀU NỀN BÀN CỜ -->
+            
+            <div class="setup-group mt-6 border-t pt-4 border-dashed border-orange-200">
+                <span class="label-text flex items-center gap-2">
+                    🚀 Chơi Online (2 người):
+                </span>
+                <div class="grid grid-cols-2 gap-3 mt-2">
+                    <button id="btn-room1" onclick="joinOnlineRoom('room1')" class="room-btn bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl shadow-sm transition-all relative overflow-hidden group">
+                         <div class="font-black text-lg">PHÒNG 1</div>
+                         <div class="room-status text-xs font-bold flex items-center justify-center gap-1">
+                            <span class="status-dot w-2 h-2 rounded-full bg-white animate-pulse"></span> <span class="status-text">Trống - Vào ngay</span>
+                         </div>
+                    </button>
+                    <button id="btn-room2" onclick="joinOnlineRoom('room2')" class="room-btn bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl shadow-sm transition-all relative overflow-hidden group">
+                         <div class="font-black text-lg">PHÒNG 2</div>
+                         <div class="room-status text-xs font-bold flex items-center justify-center gap-1">
+                            <span class="status-dot w-2 h-2 rounded-full bg-white animate-pulse"></span> <span class="status-text">Trống - Vào ngay</span>
+                         </div>
+                    </button>
+                </div>
+                <div id="online-status-msg" class="text-center text-xs font-bold text-orange-600 mt-2 hidden">
+                    Đang kết nối...
+                </div>
+            </div>
 
             <button onclick="confirmSetup()" class="btn-start">CHƠI VÁN MỚI ▶</button>
         </div>
     </div>
 
     <script src="ai_controller.js?v=<?= $VERSION ?>"></script>
+    <script src="human_ai_engine.js?v=<?= $VERSION ?>"></script>
+    <script src="game_analyzer.js?v=<?= $VERSION ?>"></script>
+    <script type="module" src="online/client.js?v=<?= $VERSION ?>"></script>
     <script src="main.js?v=<?= $VERSION ?>"></script>
 
     <script>
@@ -164,6 +211,50 @@
             document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
             el.classList.add('selected');
         }
+        let setupPollInterval = null;
+
+        function updateRoomButtons() {
+            if (typeof window.OnlineChess === 'undefined') return;
+            window.OnlineChess.getRoomsInfo().then(data => {
+                ['room1', 'room2'].forEach(room => {
+                    const status = data[room] || 'empty';
+                    const btn = document.getElementById(`btn-${room}`);
+                    const dot = btn.querySelector('.status-dot');
+                    const txt = btn.querySelector('.status-text');
+
+                    if (status === 'empty') {
+                        btn.className = "room-btn bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl shadow-sm transition-all relative overflow-hidden group";
+                        dot.className = "status-dot w-2 h-2 rounded-full bg-white animate-pulse";
+                        txt.textContent = "Trống - Vào ngay";
+                        btn.disabled = false;
+                    } else if (status === 'waiting') {
+                        btn.className = "room-btn bg-yellow-400 hover:bg-yellow-500 text-white p-3 rounded-xl shadow-sm transition-all relative overflow-hidden group";
+                        dot.className = "status-dot w-2 h-2 rounded-full bg-white animate-bounce";
+                        txt.textContent = "1 người - Vào chơi";
+                        btn.disabled = false;
+                    } else if (status === 'full') {
+                        btn.className = "room-btn bg-gray-200 text-gray-400 p-3 rounded-xl shadow-none cursor-not-allowed";
+                        dot.className = "status-dot w-2 h-2 rounded-full bg-gray-400";
+                        txt.textContent = "Đã đầy";
+                        btn.disabled = true;
+                    }
+                });
+            });
+        }
+
+        // Poll room status when modal is open
+        const setupObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.target.style.display !== 'none') {
+                    updateRoomButtons();
+                    if (!setupPollInterval) setupPollInterval = setInterval(updateRoomButtons, 2000);
+                } else {
+                    if (setupPollInterval) { clearInterval(setupPollInterval); setupPollInterval = null; }
+                }
+            });
+        });
+        setupObserver.observe(document.getElementById('setup-modal'), { attributes: true, attributeFilter: ['style'] });
+
         function confirmSetup() {
             if (typeof window.Chessground === 'undefined') {
                 alert("Đang tải bàn cờ, bé đợi xíu nha...");
@@ -172,6 +263,12 @@
             const level = document.getElementById('level-select').value;
             document.getElementById('setup-modal').style.display = 'none';
             window.gameController.startGame(parseInt(level), selectedColor);
+        }
+
+        function joinOnlineRoom(roomId) {
+            document.getElementById('setup-modal').style.display = 'none';
+            // Pass the selected color preference to the controller
+            window.gameController.startOnlineGame(roomId, selectedColor);
         }
     </script>
 </body>

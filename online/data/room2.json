@@ -1,0 +1,12 @@
+{
+    "id": "room2",
+    "status": "waiting",
+    "white": null,
+    "black": null,
+    "fen": "start",
+    "turn": "w",
+    "last_move": null,
+    "updated_at": 0,
+    "white_last_seen": 0,
+    "black_last_seen": 0
+}

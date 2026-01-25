@@ -6,6 +6,9 @@ class GameController {
   constructor() {
     this.game = new Chess();
     this.ai = new AIController();
+    const MISTRAL_API_KEY = "p4UmPsFzAeHNg4SWeVVRGMcEPMK7b28D"; // Vui lòng điền API Key Mistral của bạn vào đây
+    this.humanAi = new HumanAiEngine(MISTRAL_API_KEY);
+    this.analyzer = new GameAnalyzer(MISTRAL_API_KEY);
     this.board = null;
     this.playerColor = "w";
     this.isGameActive = false;
@@ -13,7 +16,13 @@ class GameController {
     this.gameOverMessage = "";
     this.overlayTimer = null;
     this.autoSetupTimer = null;
+
     this.userHasInteracted = false;
+
+    // Online Mode
+    this.online = null;
+    this.isOnlineMode = false;
+    this.onlineRoomId = null;
 
     this.levelNames = {
       1: "🐣 Cấp 1: Tập chơi (Rất Dễ)",
@@ -21,6 +30,7 @@ class GameController {
       3: "🦊 Cấp 3: Thử thách (Vừa)",
       4: "🐯 Cấp 4: Thông minh (Khó)",
       5: "🦁 Cấp 5: Siêu đẳng (Rất Khó)",
+      6: "🤖 Cấp 6: Siêu Trí Tuệ (AI)",
     };
 
     this.charNames = {
@@ -29,6 +39,7 @@ class GameController {
       3: "🦊 Anh Cáo",
       4: "🐯 Chú Hổ",
       5: "🦁 Lão Sư Tử",
+      6: "🤖 Siêu Trí Tuệ",
     };
 
     this.pieceNames = {
@@ -60,6 +71,9 @@ class GameController {
     document.addEventListener("mousedown", this.handleInteraction, {
       once: true,
     });
+
+    // Check AI Connection
+    this.humanAi.checkConnection();
 
     // Khi game over, bấm vào bàn cờ sẽ hiện lại thông báo ngay lập tức
     $("#board-container").on("click", () => {
@@ -101,10 +115,10 @@ class GameController {
       "error",
       (e) => {
         console.warn(
-          `⚠️ Lỗi tải audio assets/${fileName} - Đang thử file dự phòng...`
+          `⚠️ Lỗi tải audio assets/${fileName} - Đang thử file dự phòng...`,
         );
       },
-      true
+      true,
     );
 
     audio.load();
@@ -112,6 +126,22 @@ class GameController {
   }
 
   startGame(level, color) {
+    // 1. Teardown Online Mode
+    this.isOnlineMode = false;
+    this.onlineRoomId = null;
+    if (this.online) {
+      this.online.stopPolling();
+      this.online = null;
+      $("#online-status-msg").hide();
+    }
+    // Restore Offline UI
+    $("#version-badge").show();
+    $("#hint-btn").show(); // Show hint button in offline mode
+    $("#undo-btn")
+      .prop("disabled", false)
+      .removeClass("opacity-50 cursor-not-allowed"); // Enable undo in offline
+
+    // 2. Setup Offline Game
     this.playerColor = color;
     this.game.reset();
     this.isGameActive = true;
@@ -127,9 +157,174 @@ class GameController {
     this.updateStatus();
     this.playSound("start");
 
+    // Xóa bỏ phân tích ván cũ
+    this.analyzer.clear(this.board);
+
     if (this.playerColor === "b") {
       this.triggerAiMove();
     }
+  }
+
+  startOnlineGame(roomId, colorPref) {
+    // 1. Teardown Offline Mode
+    this.isOnlineMode = true;
+    this.onlineRoomId = roomId;
+    this.currentLevel = 0; // 0 indicates Online/No AI logic
+
+    // Stop any pending AI or timers
+    clearTimeout(this.overlayTimer);
+    clearTimeout(this.autoSetupTimer);
+
+    // 2. Setup Online Game
+    this.game.reset(); // Reset local board
+    this.gameOverMessage = "";
+
+    // UI Reset
+    $("#game-overlay").hide();
+    $("#game-status").html(
+      '<span class="text-blue-600 animate-pulse">⏳ Đang kết nối server...</span>',
+    );
+    $("#version-badge").hide(); // Hide offline version badge
+
+    // Initialize Online Module
+    if (this.online) this.online.stopPolling();
+    this.online = new window.OnlineChess(roomId, (state) =>
+      this.handleOnlineState(state),
+    );
+
+    $("#online-status-msg")
+      .text("Đang vào phòng...")
+      .show()
+      .removeClass("hidden");
+
+    // Join with Color Preference
+    this.online.join(colorPref).then((data) => {
+      if (!data || data.error) {
+        alert(data ? data.error : "Lỗi kết nối Server!");
+        this.startGame(1, "w"); // Fallback to offline
+        return;
+      }
+      $("#online-status-msg").text("Bé đã vào phòng!").fadeOut(3000);
+      $("#online-status-msg").text("Bé đã vào phòng!").fadeOut(3000);
+      console.log("Joined Room:", data);
+      window.gameController.playSound("start"); // Play start sound correctly
+      $("#hint-btn").hide(); // Hide hint button in online mode
+      $("#undo-btn")
+        .prop("disabled", true)
+        .addClass("opacity-50 cursor-not-allowed"); // Disable undo in online
+    });
+  }
+
+  handleOnlineState(state) {
+    if (!this.isOnlineMode) return;
+
+    // 1. Update Role/Color
+    if (state.my_role === "w") this.playerColor = "w";
+    else if (state.my_role === "b") this.playerColor = "b";
+    else this.playerColor = "spectator"; // Full room
+
+    // 2. Update Status Text
+    if (state.status === "waiting") {
+      $("#game-status").html(
+        '<span class="text-blue-500 animate-pulse">⏳ Đang đợi người khác vào...</span>',
+      );
+      this.board.set({ movable: { color: null } }); // Freeze board
+      // Close opponent left modal if open (maybe they rejoined)
+      $("#opponent-left-modal").fadeOut();
+      return;
+    }
+
+    if (state.status === "opponent_disconnected") {
+      // Show Modal instead of auto switch
+      $("#opponent-left-modal").fadeIn();
+      this.playSound("defeat"); // Sound alert
+      return;
+    }
+
+    // Hide modal if playing
+    if (state.status === "playing") {
+      $("#opponent-left-modal").fadeOut();
+    }
+
+    // 3. Sync Board
+    if (state.fen !== this.game.fen()) {
+      const loadRes = this.game.load(state.fen);
+      if (!loadRes && state.fen === "start") this.game.reset();
+
+      this.playSound("move");
+      this.updateBoardUI();
+      this.updateBoardUI();
+      this.updateStatus();
+
+      // Check for game over on server state
+      if (this.game.game_over()) {
+        const isWin =
+          this.game.in_checkmate() && this.game.turn() !== this.playerColor;
+        const isLoss =
+          this.game.in_checkmate() && this.game.turn() === this.playerColor;
+        const isDraw = this.game.in_draw();
+
+        if (isWin) {
+          this.playSound("victory");
+          this.showGameResultOverlay("BẠN THẮNG RỒI! 🏆", false);
+        } else if (isLoss) {
+          this.playSound("defeat");
+          this.showGameResultOverlay("BẠN THUA RỒI! 😢", false);
+        } else if (isDraw) {
+          this.showGameResultOverlay("HÒA CỜ! 🤝", false);
+        }
+      }
+    }
+
+    // 4. Turn Indication & Hints
+    if (state.status === "playing") {
+      const isMyTurn = this.game.turn() === this.playerColor;
+
+      if (isMyTurn) {
+        $("#game-status").html(
+          `<span class="text-green-600 font-bold">👉 ĐẾN LƯỢT QUÂN (${this.playerColor === "w" ? "TRẮNG" : "ĐEN"})</span>`,
+        );
+        // Auto Show Visual Hints (dots) handled by Chessground
+      } else {
+        $("#game-status").html(
+          `<span class="text-gray-500">⏳ Đợi đối thủ đi...</span>`,
+        );
+      }
+    }
+  }
+
+  switchToAi() {
+    // User chose to play with Bot Level 6
+    $("#opponent-left-modal").fadeOut();
+    $("#online-status-msg").hide();
+
+    if (this.online) {
+      this.online.leave(); // Notify server cleanup
+      this.online = null;
+    }
+    this.isOnlineMode = false;
+
+    // Continue from current position
+    this.currentLevel = 6;
+    this.ai.setLevel(6);
+    this.isGameActive = true;
+
+    this.updateBoardUI(); // Refresh board interaction
+    this.updateStatus(); // Refresh status text
+    this.updateLevel(6); // Show Level 6 Badge
+
+    // If it's now Bot's turn (and I played last), trigger bot
+    if (this.game.turn() !== this.playerColor) {
+      this.triggerAiMove();
+    }
+  }
+
+  waitForOpponent() {
+    $("#opponent-left-modal").fadeOut();
+    $("#game-status").html(
+      '<span class="text-blue-500 animate-pulse">⏳ Đang đợi bạn quay lại...</span>',
+    );
+    // Do nothing, just keep polling
   }
 
   updateLevel(level) {
@@ -148,6 +343,15 @@ class GameController {
   }
 
   undoMove() {
+    // Prevent undo in online mode to avoid desync
+    if (this.isOnlineMode) {
+      $("#game-status").html(
+        '<span class="text-red-500 font-bold">⚠️ Không thể lùi lại trong chế độ online!</span>',
+      );
+      setTimeout(() => this.updateStatus(), 2000);
+      return;
+    }
+
     if (this.game.history().length === 0) return;
     $("#game-overlay").hide();
     clearTimeout(this.overlayTimer);
@@ -164,6 +368,7 @@ class GameController {
     this.updateStatus();
     this.playSound("move");
     this.removeDangerEffect();
+    this.analyzer.clear(this.board);
   }
 
   openSetup() {
@@ -176,8 +381,8 @@ class GameController {
 
     modal.style.display = "flex";
     const closeBtn = document.getElementById("modal-close-btn");
-    closeBtn.style.display =
-      this.isGameActive || this.game.game_over() ? "flex" : "none";
+    // Always show close button now that we fixed the UI logic
+    if (closeBtn) closeBtn.style.display = "flex";
   }
 
   closeSetup() {
@@ -241,7 +446,7 @@ class GameController {
       setTimeout(() => {
         const colorName = turn === "w" ? "white" : "black";
         const kingPiece = document.querySelector(
-          `.cg-wrap piece.king.${colorName}`
+          `.cg-wrap piece.king.${colorName}`,
         );
         if (kingPiece) kingPiece.classList.add("king-alarm");
       }, 50);
@@ -276,7 +481,12 @@ class GameController {
   updateBoardUI() {
     const container = document.getElementById("board-container");
     if (!container) return;
-    const isInteractable = this.isGameActive && !this.game.game_over();
+
+    // For online mode, always allow interaction if it's my playing turn
+    let isInteractable = this.isGameActive && !this.game.game_over();
+    if (this.isOnlineMode) {
+      isInteractable = this.game.turn() === this.playerColor;
+    }
 
     const history = this.game.history({ verbose: true });
     const lastMove = history.length > 0 ? history[history.length - 1] : null;
@@ -323,7 +533,7 @@ class GameController {
       if (ms.length)
         dests.set(
           s,
-          ms.map((m) => m.to)
+          ms.map((m) => m.to),
         );
     });
     return dests;
@@ -362,11 +572,15 @@ class GameController {
     )
       return;
 
+    // Khi bật chế độ Mind-reading (Cấp 6), không hiển thị tên quân cờ để tránh đè trạng thái
+    if (this.currentLevel === 6) return;
+
     const piece = this.game.get(key);
     if (piece) {
       const pieceName = this.pieceNames[piece.type] || "Quân cờ";
+      const subject = this.currentLevel >= 4 ? "Đây là" : "✨ Đây là";
       $("#game-status").html(
-        `<span class="text-blue-600 font-bold">✨ Đây là: ${pieceName}</span>`
+        `<span class="text-blue-600 font-bold">${subject}: ${pieceName}</span>`,
       );
     } else {
       this.updateStatus();
@@ -374,40 +588,65 @@ class GameController {
   }
 
   onPlayerMove(orig, dest) {
-    if (!this.isGameActive) return;
+    if (this.isOnlineMode && this.game.turn() !== this.playerColor) {
+      return; // Not your turn
+    }
+
+    if (!this.isGameActive && !this.isOnlineMode) return;
+    // For online mode, game is active if status is playing, checked in onPlayerMove logic via turn color
+
+    // Optimistic UI Update first?
+    // No, for reliability, let's validate validity first using Chess.js
+    // We clone the game to test the move
+
     const move = this.game.move({ from: orig, to: dest, promotion: "q" });
     if (move) {
-      this.playSound("move");
+      if (this.isOnlineMode) {
+        // Send to server
+        this.online.move(this.game.fen(), move.san);
+        // UI update will happen when server confirms (via polling)
+        // OR we can do optimistic update:
+        this.updateBoardUI();
+        this.playSound("move");
 
-      if (move.captured) {
-        this.playSound("capture");
-        this.triggerCaptureEffect(dest, true);
-      }
-
-      this.board.set({
-        drawable: { shapes: this.getLastMoveArrow() },
-        movable: { color: null },
-      });
-
-      this.updateStatus();
-
-      let specialMessage = "";
-      if (move.flags.includes("e")) {
-        specialMessage = "BẮT TỐT<br>QUA ĐƯỜNG! 😲";
-      } else if (move.flags.includes("p") || move.flags.includes("cp")) {
-        specialMessage = "PHONG HẬU! 😎";
-      } else if (move.flags.includes("k") || move.flags.includes("q")) {
-        specialMessage = "NHẬP THÀNH! 🛡️";
-      }
-
-      if (specialMessage) {
-        this.showGameResultOverlay(specialMessage, false);
-        if (!this.game.game_over()) {
-          setTimeout(() => this.triggerAiMove(), 2000);
+        if (move.captured) {
+          this.playSound("capture");
+          this.triggerCaptureEffect(dest, true);
         }
       } else {
-        if (!this.game.game_over()) {
-          this.triggerAiMove();
+        // Offline Logic (Existing)
+        this.playSound("move");
+
+        if (move.captured) {
+          this.playSound("capture");
+          this.triggerCaptureEffect(dest, true);
+        }
+
+        this.board.set({
+          drawable: { shapes: this.getLastMoveArrow() },
+          movable: { color: null },
+        });
+
+        this.updateStatus();
+
+        let specialMessage = "";
+        if (move.flags.includes("e")) {
+          specialMessage = "BẮT TỐT<br>QUA ĐƯỜNG! 😲";
+        } else if (move.flags.includes("p") || move.flags.includes("cp")) {
+          specialMessage = "PHONG HẬU! 😎";
+        } else if (move.flags.includes("k") || move.flags.includes("q")) {
+          specialMessage = "NHẬP THÀNH! 🛡️";
+        }
+
+        if (specialMessage) {
+          this.showGameResultOverlay(specialMessage, false);
+          if (!this.game.game_over()) {
+            setTimeout(() => this.triggerAiMove(), 2000);
+          }
+        } else {
+          if (!this.game.game_over()) {
+            this.triggerAiMove();
+          }
         }
       }
     } else {
@@ -416,13 +655,23 @@ class GameController {
   }
 
   triggerAiMove() {
-    const charName = this.charNames[this.currentLevel] || "Máy";
-    $("#game-status").text(`${charName} đang suy nghĩ...`);
-    setTimeout(() => {
-      this.ai.getMove(this.game, (bestMove) => {
+    // Special case: In online mode, we don't trigger AI move, BUT we might want hints
+    if (this.isOnlineMode) return;
+
+    if (this.currentLevel === 6) {
+      // HumanAiEngine sẽ tự hiển thị trạng thái suy nghĩ của nó
+      this.humanAi.getMove(this.game, (bestMove) => {
         this.onAiMove(bestMove);
       });
-    }, 1000);
+    } else {
+      const charName = this.charNames[this.currentLevel] || "Máy";
+      $("#game-status").text(`${charName} đang suy nghĩ...`);
+      setTimeout(() => {
+        this.ai.getMove(this.game, (bestMove) => {
+          this.onAiMove(bestMove);
+        });
+      }, 1000);
+    }
   }
 
   onAiMove(moveData) {
@@ -488,6 +737,11 @@ class GameController {
   updateStatus() {
     if (!this.game.in_checkmate()) {
       this.removeDangerEffect();
+      // Khôi phục hiển thị version nếu không còn bị chiếu
+      if (!this.game.in_check()) {
+        $("#version-badge").show();
+        $("#check-badge").addClass("hidden");
+      }
     }
 
     if (this.game.game_over()) {
@@ -501,7 +755,8 @@ class GameController {
 
         if (this.game.turn() !== this.playerColor) {
           const charName = this.charNames[this.currentLevel] || "Máy";
-          this.gameOverMessage = `BÉ THẮNG ${charName.toUpperCase()}<br>RỒI! GIỎI QUÁ 🏆`;
+          const subject = this.currentLevel >= 4 ? "BẠN" : "BÉ";
+          this.gameOverMessage = `${subject} THẮNG ${charName.toUpperCase()}<br>RỒI! GIỎI QUÁ 🏆`;
 
           if ([1, 2, 3].includes(this.currentLevel)) {
             playSoundName = "victory_kid";
@@ -536,11 +791,12 @@ class GameController {
           })();
 
           $("#game-status").html(
-            `<span class="text-green-600">🏆 BÉ THẮNG ${charName.toUpperCase()} RỒI!</span>`
+            `<span class="text-green-600">🏆 ${subject} THẮNG ${charName.toUpperCase()} RỒI!</span>`,
           );
         } else {
           const charName = this.charNames[this.currentLevel] || "Máy";
-          this.gameOverMessage = `${charName.toUpperCase()} THẮNG RỒI<br>BÉ CỐ LÊN NHÉ 😢`;
+          const subject = this.currentLevel >= 4 ? "BẠN" : "BÉ";
+          this.gameOverMessage = `${charName.toUpperCase()} THẮNG RỒI<br>${subject} CỐ LÊN NHÉ 😢`;
 
           if ([1, 2, 3].includes(this.currentLevel)) {
             playSoundName = "defeat_kid";
@@ -553,7 +809,7 @@ class GameController {
           }
 
           $("#game-status").html(
-            `<span class="text-red-500">😅 ${charName} thắng rồi.</span>`
+            `<span class="text-red-500">😅 ${charName} thắng rồi.</span>`,
           );
         }
       } else if (this.game.in_draw()) {
@@ -571,6 +827,14 @@ class GameController {
         this.showGameResultOverlay(this.gameOverMessage, false);
       }, 2000);
 
+      // Chạy phân tích ván đấu (Level 1-5: Visual, Level 6: AI)
+      this.analyzer.runAnalysis(
+        this.game,
+        this.currentLevel,
+        this.board,
+        this.playerColor,
+      );
+
       // Tự động hiện bảng cài đặt sau 10 giây
       clearTimeout(this.autoSetupTimer);
       this.autoSetupTimer = setTimeout(() => {
@@ -578,20 +842,39 @@ class GameController {
       }, 10000);
     } else {
       if (this.game.in_check()) {
+        // Luôn hiện thông báo chiếu ở khu vực badge để không đè game-status
+        $("#version-badge").hide();
+        $("#check-badge").removeClass("hidden");
+
         if (this.game.turn() === this.playerColor) {
           const charName = this.charNames[this.currentLevel] || "Máy";
-          $("#game-status").html(
-            `<span class="text-red-600 font-black">⚡ ${charName.toUpperCase()} ĐANG CHIẾU!</span>`
-          );
+          // Ở Level 6, không ghi đè game-status để AI còn nói chuyện
+          if (this.currentLevel !== 6) {
+            $("#game-status").html(
+              `<span class="text-red-600 font-black">⚡ ${charName.toUpperCase()} ĐANG CHIẾU!</span>`,
+            );
+          }
           this.triggerCheckWarning();
         } else {
           const charName = this.charNames[this.currentLevel] || "Máy";
-          $("#game-status").text(`🔥 Bé đang chiếu ${charName}!`);
+          const subject = this.currentLevel >= 4 ? "Bạn" : "Bé";
+          if (this.currentLevel !== 6) {
+            $("#game-status").text(`🔥 ${subject} đang chiếu ${charName}!`);
+          }
           this.playSound("check");
         }
       } else {
+        // Hết chiếu thì hiện lại version
+        $("#version-badge").show();
+        $("#check-badge").addClass("hidden");
+
         if (this.game.turn() === this.playerColor) {
-          $("#game-status").text("👉 Lượt của bé");
+          const subject = this.currentLevel >= 4 ? "Bạn" : "Bé";
+          // Ở Level 6, ra lệnh dừng gõ để hiện thông báo lượt của người chơi
+          if (this.currentLevel === 6) {
+            this.humanAi.stopTyping();
+          }
+          $("#game-status").text(`👉 Lượt của ${subject.toLowerCase()}`);
         }
       }
     }
@@ -664,7 +947,11 @@ class GameController {
   }
 
   showHint() {
-    if (this.game.turn() !== this.playerColor || this.game.game_over()) return;
+    if (this.game.game_over()) return;
+
+    // Allow hint in Online Mode if it's my turn
+    if (this.isOnlineMode && this.game.turn() !== this.playerColor) return;
+    if (!this.isOnlineMode && this.game.turn() !== this.playerColor) return;
 
     const btn = $("#hint-btn");
     const originalText = btn.html();
@@ -697,7 +984,7 @@ class GameController {
           }, 3000);
         }
       },
-      4
+      4,
     );
   }
 }
