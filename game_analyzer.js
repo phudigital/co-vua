@@ -174,7 +174,7 @@ class GameAnalyzer {
         Yêu cầu:
         1. CHỈ tập trung phân tích các nước đi của người chơi cầm quân ${playerSide} đọc tên quân thay về nêu tọa độ ô cờ.
         2. Chỉ ra nước đi sai lầm (đọc tên quân thôi ko nêu tọa độ) then chốt của người chơi (nếu có) và giải thích tại sao.
-        3. Ngôn ngữ: Tiếng Việt, ngắn gọn súc tích khoảng 100 chữ`;
+        3. Ngôn ngữ: Tiếng Việt, ngắn gọn súc tích không quá 200 từ.`;
 
     try {
       const response = await fetch(this.mistralUrl, {
