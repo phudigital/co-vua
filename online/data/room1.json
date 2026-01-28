@@ -1,12 +1,12 @@
 {
-  "id": "room1",
-  "status": "waiting",
-  "white": null,
-  "black": null,
-  "fen": "start",
-  "turn": "w",
-  "last_move": null,
-  "updated_at": 0,
-  "white_last_seen": 0,
-  "black_last_seen": 0
+    "id": "room1",
+    "status": "waiting",
+    "white": null,
+    "black": null,
+    "fen": "start",
+    "turn": "w",
+    "last_move": null,
+    "updated_at": 1769613581,
+    "white_ping": 0,
+    "black_ping": 0
 }

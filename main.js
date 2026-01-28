@@ -23,6 +23,7 @@ class GameController {
     this.online = null;
     this.isOnlineMode = false;
     this.onlineRoomId = null;
+    this.lastPlayerMoveSAN = null; // Track player's last move SAN to avoid double-triggering
 
     this.levelNames = {
       1: "🐣 Cấp 1: Tập chơi (Rất Dễ)",
@@ -82,6 +83,33 @@ class GameController {
         this.showGameResultOverlay(this.gameOverMessage, false);
       }
     });
+  }
+
+  // Parse SAN notation to detect captures
+  parseMoveFromSAN(san, fen) {
+    try {
+      const tempGame = new Chess(fen || this.game.fen());
+      const move = tempGame.move(san);
+      return move;
+    } catch (e) {
+      console.warn("Failed to parse SAN:", san, e);
+      return null;
+    }
+  }
+
+  // Detect capture from state change
+  detectCaptureFromState(prevFen, state) {
+    if (!state.last_move) return { isCapture: false };
+
+    const move = this.parseMoveFromSAN(state.last_move, prevFen);
+    if (!move) return { isCapture: false };
+
+    return {
+      isCapture: !!move.captured,
+      captureSquare: move.to,
+      isEnPassant: move.flags.includes('e'),
+      moveObject: move
+    };
   }
 
   handleInteraction = () => {
@@ -248,6 +276,32 @@ class GameController {
 
     // 3. Sync Board
     if (state.fen !== this.game.fen()) {
+      const prevFen = this.game.fen(); // Store before updating
+
+      // Double-trigger prevention: check if this is server confirmation of player's move
+      if (state.last_move && state.last_move === this.lastPlayerMoveSAN) {
+        // This is server confirming player's move, reset tracking and skip capture effect
+        this.lastPlayerMoveSAN = null;
+      } else {
+        // This is opponent's move, check for captures
+        // Skip if player is spectator
+        if (this.playerColor !== "spectator") {
+          const captureInfo = this.detectCaptureFromState(prevFen, state);
+          if (captureInfo.isCapture && captureInfo.moveObject) {
+            this.playSound("capture");
+
+            // Determine whose piece was captured
+            const capturedPieceColor = captureInfo.moveObject.captured;
+            const opponentCapturedPlayerPiece = capturedPieceColor === this.playerColor;
+
+            this.triggerCaptureEffect(
+              captureInfo.captureSquare,
+              !opponentCapturedPlayerPiece // true if player captured, false if player lost piece
+            );
+          }
+        }
+      }
+
       const loadRes = this.game.load(state.fen);
       if (!loadRes && state.fen === "start") this.game.reset();
 
@@ -266,12 +320,13 @@ class GameController {
 
         if (isWin) {
           this.playSound("victory");
-          this.showGameResultOverlay("BẠN THẮNG RỒI! 🏆", false);
+          this.showGameResultOverlay("CHÚC MỪNG CHIẾN THẮNG! 🏆🎉", false);
+          this.triggerVictoryConfetti();
         } else if (isLoss) {
           this.playSound("defeat");
-          this.showGameResultOverlay("BẠN THUA RỒI! 😢", false);
+          this.showGameResultOverlay("CỐ GẮNG LẦN SAU! 💪\nĐỪNG NẢN NHÉ!", false);
         } else if (isDraw) {
-          this.showGameResultOverlay("HÒA CỜ! 🤝", false);
+          this.showGameResultOverlay("HÒA CỜ! 🤝\nHAI BÊN ĐỀU XUẤT SẮC!", false);
         }
       }
     }
@@ -472,9 +527,17 @@ class GameController {
     textEl.html(message);
     overlay.css("display", "flex").hide().fadeIn(300);
 
+    // Add special class for victory messages
+    if (message.includes("CHÚC MỪNG") || message.includes("CHIẾN THẮNG")) {
+      overlay.addClass("victory-special");
+    } else {
+      overlay.removeClass("victory-special");
+    }
+
     clearTimeout(this.overlayTimer);
     this.overlayTimer = setTimeout(() => {
       overlay.fadeOut(500);
+      overlay.removeClass("victory-special"); // Clean up
     }, 3000);
   }
 
@@ -604,6 +667,7 @@ class GameController {
       if (this.isOnlineMode) {
         // Send to server
         this.online.move(this.game.fen(), move.san);
+        this.lastPlayerMoveSAN = move.san; // Track for double-trigger prevention
         // UI update will happen when server confirms (via polling)
         // OR we can do optimistic update:
         this.updateBoardUI();
@@ -919,6 +983,55 @@ class GameController {
         console.error(e);
       }
     }
+  }
+
+  triggerVictoryConfetti() {
+    const end = Date.now() + 5500; // 5.5 seconds
+    const colors = ["#22c55e", "#ffffff", "#fbbf24", "#ef4444", "#3b82f6", "#8b5cf6"];
+
+    (function frame() {
+      // Left side confetti with diverse shapes
+      confetti({
+        particleCount: 8,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: colors,
+        shapes: ['circle', 'square', 'circle', 'square'], // Mixed shapes
+        scalar: 1.2,
+        zIndex: 2000,
+      });
+
+      // Right side confetti with emoji particles
+      confetti({
+        particleCount: 6,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: colors,
+        shapes: ['circle', 'square', 'circle'],
+        scalar: 1.2,
+        zIndex: 2000,
+      });
+
+      // Center celebration (occasionally)
+      if (Math.random() < 0.3) {
+        confetti({
+          particleCount: 4,
+          angle: 90,
+          spread: 70,
+          origin: { x: 0.5, y: 0.5 },
+          colors: ['#FFD700', '#FF6B6B', '#4ECDC4'],
+          shapes: ['circle'],
+          scalar: 1.5,
+          zIndex: 2000,
+        });
+      }
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
   }
 
   getSquareScreenCoordinates(square) {
